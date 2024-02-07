@@ -1,0 +1,19 @@
+name: my-build
+on: push
+jobs:
+  my-build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        cache: 'npm'
+    - run: make install
+    - name: develop
+      run: make develop
+    - name: build
+      run: make build
+    - name: lint
+      run: make lint 
+    - name: test
+      run: make test
