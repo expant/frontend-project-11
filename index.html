@@ -6,8 +6,30 @@
         <title>Webpack App</title>
     </head>
     <body>
-        <h1>Hello world!</h1>
-        <h2>Tip: Check your console</h2>
+        <div class="container">
+            <div class="row header">
+                <div class="col">
+                    <h1 class="title">RSS агрегатор</h1>
+                    <p class="lead">Начните читать RSS сегодня! Это легко, это красиво.</p>
+                    <form action="POST">
+                        <div class="col-5 mb-3">
+                            <label for="url" class="form-label"></label>
+                            <input 
+                                type="text" 
+                                name="url"
+                                class="form-control"
+                                placeholder="ссылка RSS"
+                                autofocus
+                                required
+                            >
+                        </div>
+                        <div class="col-4 mb-3">
+                            <button type="submit" class="btn btn-primary">Добавить</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </body>
     
 </html>
