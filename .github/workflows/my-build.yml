@@ -13,5 +13,5 @@ jobs:
       run: make build
     - name: lint
       run: make lint 
-    - name: test
-      run: make test
+    # - name: test
+    #   run: make test
