@@ -5,31 +5,44 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Webpack App</title>
     </head>
-    <body>
-        <div class="container">
-            <div class="row header">
-                <div class="col">
-                    <h1 class="title">RSS агрегатор</h1>
-                    <p class="lead">Начните читать RSS сегодня! Это легко, это красиво.</p>
-                    <form action="POST">
-                        <div class="col-5 mb-3">
-                            <label for="url" class="form-label"></label>
-                            <input 
-                                type="text" 
-                                name="url"
-                                class="form-control"
-                                placeholder="ссылка RSS"
-                                autofocus
-                                required
-                            >
-                        </div>
-                        <div class="col-4 mb-3">
-                            <button type="submit" class="btn btn-primary">Добавить</button>
-                        </div>
-                    </form>
+    <body class="d-flex flex-column min-vw-100">
+        <main class="flex-grow-1">
+            <section class="container-fluid bg-dark p-5">
+                <div class="row header">
+                    <div class="col-md-10 col-lg-8 mx-auto text-white">
+                        <h1 class="display-3 mb-0">RSS агрегатор</h1>
+                        <p class="lead">Начните читать RSS сегодня! Это легко, это красиво.</p>
+                        <form action class="rss-form text-body">
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-floating">
+                                        <input
+                                            id="url-input"
+                                            type="text"
+                                            name="url"
+                                            class="form-control w-100"
+                                            autocomplete="off"
+                                            placeholder="Cсылка RSS"
+                                            autofocus
+                                            required
+                                        >
+                                        <label for="url-input" class="form-label">Cсылка RSS</label>
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <button 
+                                        type="submit" 
+                                        class="btn btn-lg btn-primary h-100 px-sm-5">
+                                        Добавить
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-            </div>
-        </div>
+            </section>
+        </main>
+           
     </body>
     
 </html>
