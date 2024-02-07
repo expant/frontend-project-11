@@ -6,4 +6,4 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/ce667e692569089ce047/maintainability)](https://codeclimate.com/github/expant/frontend-project-11/maintainability)
 
 ### Deploy on Vercel
-https://frontend-project-11-expant.vercel.app/
+https://frontend-project-11-weld-mu.vercel.app
