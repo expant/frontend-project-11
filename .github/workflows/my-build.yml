@@ -9,8 +9,6 @@ jobs:
       with:
         cache: 'npm'
     - run: make install
-    - name: develop
-      run: make develop
     - name: build
       run: make build
     - name: lint
