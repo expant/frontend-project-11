@@ -4,7 +4,7 @@
   "description": "[![Actions Status](https://github.com/expant/frontend-project-11/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/expant/frontend-project-11/actions)",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest --colors"
   },
   "repository": {
     "type": "git",
@@ -12,6 +12,13 @@
   },
   "author": "Anton Elagin",
   "license": "ISC",
+  "jest": {
+    "verbose": true,
+    "testEnvironmentOptions": {
+      "url": "http://localhost/"
+    },
+    "testEnvironment": "jsdom"
+  },
   "devDependencies": {
     "@babel/core": "^7.23.3",
     "@babel/eslint-parser": "^7.23.10",
@@ -29,6 +36,7 @@
     "jest-cli": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "postcss-loader": "^8.1.0",
+    "postcss-preset-env": "^9.3.0",
     "sass": "^1.70.0",
     "sass-loader": "^14.1.0",
     "style-loader": "^3.3.4",
