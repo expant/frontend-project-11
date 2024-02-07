@@ -1,4 +1,5 @@
 import HtmlWebpackPlugin from 'html-webpack-plugin';
+import path from 'path';
 
 export default {
   mode: process.env.NODE_ENV || 'development',
@@ -35,6 +36,8 @@ export default {
     }),
   ],
   output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: 'bundle.js',
     clean: true,
   },
 };
