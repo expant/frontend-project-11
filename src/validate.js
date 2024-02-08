@@ -1,7 +1,7 @@
 import * as yup from 'yup';
 import { keyBy } from 'lodash';
-import render from './view.js';
 import onChange from 'on-change';
+import render from './view.js';
 
 const schema = yup.object().shape({
   url: yup
@@ -34,7 +34,7 @@ export default () => {
   elements.rssForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const url = elements.urlField.value;
-    
+
     validate({ url })
       .then(() => {
         if (state.enteredUrls.includes(url)) {
@@ -49,7 +49,7 @@ export default () => {
       })
       .catch((err) => {
         const errorMessage = keyBy(err.inner, 'path').url.message;
-        state.status = 'invalid'
+        state.status = 'invalid';
         state.error = errorMessage;
       });
   });
