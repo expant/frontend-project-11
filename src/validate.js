@@ -1,22 +1,34 @@
+import i18next from 'i18next';
 import * as yup from 'yup';
 import { keyBy } from 'lodash';
-import onChange from 'on-change';
-import render from './view.js';
+import watch from './view.js';
+import ru from './locales/ru.js';
+
+yup.setLocale({
+  mixed: {
+    url: () => ({ key: 'feedbacks.invalid' }),
+  }
+})
 
 const schema = yup.object().shape({
-  url: yup
-    .string()
-    .trim()
-    .required('Link must be a valid URL')
-    .url(),
+  url: yup.string().trim().required().url(),
 });
 
 const validate = (field) => schema.validate(field, { abortEarly: false });
 
 export default () => {
   const elements = {
-    rssForm: document.querySelector('.rss-form'),
-    urlField: document.querySelector('#url-input'),
+    init: {
+      title: document.querySelector('h1'),
+      subtitle: document.querySelector('p.lead'),
+      rssForm: {
+        form: document.querySelector('.rss-form'),
+        field: document.querySelector('#url-input'),
+        label: document.querySelector('.form-label'),
+        button: document.querySelector('.btn'),
+      },
+      example: document.querySelector('.example-muted'),
+    },
     feedback: document.querySelector('.feedback'),
   };
 
@@ -24,33 +36,44 @@ export default () => {
   const initialState = {
     status: 'filling',
     enteredUrls: [],
-    error: '',
+    error: {},
   };
 
+  const i18n = i18next.createInstance();
+  i18n.init({
+    lng: 'ru',
+    debug: false,
+    resources: {
+      ru,
+    },
+  });
+
   // View
-  const state = onChange(initialState, render(elements, initialState));
+  const watchedState = watch(elements, i18n, initialState);
 
   // Controller
-  elements.rssForm.addEventListener('submit', (e) => {
+  const { form } = elements.init.rssForm;
+  form.addEventListener('submit', (e) => {
     e.preventDefault();
-    const url = elements.urlField.value;
+    const formData = new FormData(e.target);
+    const url = formData.get('url');
 
-    validate({ url })
+    validate({ url: url.value })
       .then(() => {
-        if (state.enteredUrls.includes(url)) {
-          state.error = 'RSS already exists';
-          state.status = 'invalid';
+        if (watchedState.enteredUrls.includes(url)) {
+          watchedState.error = 'RSS already exists';
+          watchedState.status = 'invalid';
           return;
         }
 
-        state.error = '';
-        state.status = 'valid';
-        state.enteredUrls.push(url);
+        watchedState.error = '';
+        watchedState.status = 'valid';
+        watchedState.enteredUrls.push(url);
       })
       .catch((err) => {
         const errorMessage = keyBy(err.inner, 'path').url.message;
-        state.status = 'invalid';
-        state.error = errorMessage;
+        watchedState.status = 'invalid';
+        watchedState.error = errorMessage;
       });
   });
 };
