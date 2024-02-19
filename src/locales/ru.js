@@ -11,6 +11,8 @@ export default {
       success: 'RSS успешно загружен',
       invalid: 'Ссылка должна быть валидным URL',
       exist: 'RSS уже существует',
-    }
+    },
+    posts: 'Посты',
+    feeds: 'Фиды',
   }
 }

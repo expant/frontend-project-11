@@ -1,52 +1,53 @@
 import onChange from 'on-change';
 
-const renderText = (elements, i18n) => {
-  const entries = Object.entries(elements);
-  entries.forEach(([name, element]) => {
-    if (name === 'rssForm') {
-      element.label.textContent = i18n.t('rssForm.label');
-      element.button.textContent = i18n.t('rssForm.button');
-      return;
-    }
-    element.textContent = i18n.t(name);
-  });
+const renderText = (elements, t) => {
+  elements.title.textContent = t('title');
+  elements.subtitle.textContent = t('subtitle');
+  elements.rssForm.label.textContent = t('rssForm.label');
+  elements.rssForm.button.textContent = t('rssForm.button');
+  elements.example.textContent = t('example');
 };
 
-const renderError = (elements, initialState) => {
-  const { urlField, feedback } = elements;
+const renderError = (elements, t, state) => {
+  const { feedback } = elements;
+  const { field } = elements.init.rssForm;
 
-  urlField.classList.add('is-invalid');
+  field.classList.add('is-invalid');
   feedback.classList.remove('text-success');
   feedback.classList.add('text-danger');
 
-  if (initialState.error === 'RSS already exists') {
-    feedback.textContent = 'RSS уже существует';
+  if (state.error.exist) {
+    feedback.textContent = t(state.error.exist);
     return;
   }
-  feedback.textContent = 'Ссылка должна быть валидным URL';
+  feedback.textContent = t(state.error.url);
 };
 
-const renderFeed = (elements, initialState) => {
-  const { urlField, feedback } = elements;
+const renderFeed = (elements, t, state) => {
+  const { feedback, posts, feeds } = elements;
+  const { field } = elements.init.rssForm;
 
-  feedback.textContent = 'RSS успешно загружен';
+  posts.title.textContent = t('posts');
+  feeds.title.textContent = t('feeds');
+  feedback.textContent = t('feedbacks.success');
   feedback.classList.add('text-success');
   feedback.classList.remove('text-danger');
-  urlField.classList.remove('is-invalid');
-  urlField.focus();
-  urlField.value = '';
+  field.classList.remove('is-invalid');
+  field.focus();
+  field.value = '';
 };
 
 export default (elements, i18n, initialState) => {
-  renderText(elements.init, i18n);
+  const { t } = i18n;
+  renderText(elements.init, t);
 
   const watchedState = onChange(initialState, (path, value) => {
-    if (initialState.error === '') {
-      renderFeed(elements, initialState);
+    if (watchedState.error === '') {
+      renderFeed(elements, t, watchedState);
     }
   
     if (path === 'error') {
-      renderError(elements, initialState);
+      renderError(elements, t, watchedState);
     }
   });
 

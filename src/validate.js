@@ -1,37 +1,44 @@
 import i18next from 'i18next';
 import * as yup from 'yup';
-import { keyBy } from 'lodash';
+import axios from 'axios';
 import watch from './view.js';
-import ru from './locales/ru.js';
+import resources from './locales/index.js';
 
 yup.setLocale({
-  mixed: {
-    url: () => ({ key: 'feedbacks.invalid' }),
-  }
-})
-
-const schema = yup.object().shape({
-  url: yup.string().trim().required().url(),
+  string: {
+    url: 'feedbacks.invalid',
+  },
 });
 
-const validate = (field) => schema.validate(field, { abortEarly: false });
+const schema = yup.object({
+  url: yup.string().required().url(),
+});
+
+const getElements = () => ({
+  init: {
+    title: document.querySelector('h1'),
+    subtitle: document.querySelector('p.lead'),
+    rssForm: {
+      form: document.querySelector('.rss-form'),
+      field: document.querySelector('#url-input'),
+      label: document.querySelector('.form-label'),
+      button: document.querySelector('.btn'),
+    },
+    example: document.querySelector('.example-muted'),
+  },
+  feedback: document.querySelector('.feedback'),
+  posts: {
+    parent: document.querySelector('.posts'),
+    title: document.querySelector('.posts h2'),
+  },
+  feeds: {
+    parent: document.querySelector('.feeds'),
+    title: document.querySelector('.feeds h2'),
+  }
+});
 
 export default () => {
-  const elements = {
-    init: {
-      title: document.querySelector('h1'),
-      subtitle: document.querySelector('p.lead'),
-      rssForm: {
-        form: document.querySelector('.rss-form'),
-        field: document.querySelector('#url-input'),
-        label: document.querySelector('.form-label'),
-        button: document.querySelector('.btn'),
-      },
-      example: document.querySelector('.example-muted'),
-    },
-    feedback: document.querySelector('.feedback'),
-  };
-
+  const elements = getElements();
   // Model
   const initialState = {
     status: 'filling',
@@ -43,9 +50,7 @@ export default () => {
   i18n.init({
     lng: 'ru',
     debug: false,
-    resources: {
-      ru,
-    },
+    resources,
   });
 
   // View
@@ -57,23 +62,28 @@ export default () => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const url = formData.get('url');
-
-    validate({ url: url.value })
+  
+    schema.validate({ url }, { abortEarly: false })
       .then(() => {
         if (watchedState.enteredUrls.includes(url)) {
-          watchedState.error = 'RSS already exists';
+          watchedState.error = { exist: 'feedbacks.exist' };
           watchedState.status = 'invalid';
           return;
         }
 
-        watchedState.error = '';
+        watchedState.error = {};
         watchedState.status = 'valid';
         watchedState.enteredUrls.push(url);
+
+        const resonse = axios.get(url)
+          .then((res) => console.log(res))
+          .catch((err) => console.log(err));
       })
       .catch((err) => {
-        const errorMessage = keyBy(err.inner, 'path').url.message;
+        const errorName = err.inner[0].path;
+        const [errorKey] = err.errors;
         watchedState.status = 'invalid';
-        watchedState.error = errorMessage;
+        watchedState.error = { [errorName]: errorKey };
       });
   });
 };
