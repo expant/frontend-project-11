@@ -11,6 +11,8 @@ export default {
       success: 'RSS успешно загружен',
       invalid: 'Ссылка должна быть валидным URL',
       exist: 'RSS уже существует',
+      unknownError: 'Неизвестная ошибка. Что-то пошло не так.',
+      invalidRSS: 'Ресурс не содержит валидный RSS',
     },
     posts: 'Посты',
     feeds: 'Фиды',

@@ -1,6 +1,7 @@
 import i18next from 'i18next';
 import * as yup from 'yup';
 import axios from 'axios';
+import _ from 'lodash';
 import watch from './view.js';
 import resources from './locales/index.js';
 import parse from './utils/parse.js';
@@ -31,20 +32,51 @@ const getElements = () => ({
   posts: {
     parent: document.querySelector('.posts'),
     title: document.querySelector('.posts h2'),
+    list: document.querySelector('.posts ul'),
   },
   feeds: {
     parent: document.querySelector('.feeds'),
     title: document.querySelector('.feeds h2'),
+    list: document.querySelector('.feeds ul'),
   }
 });
+
+const setId = (data, state, hasLists) => {
+  const { feed, posts } = {...data};
+  if (!hasLists) {
+    const feedWithId = { ...feed, id: 0 };
+    const postsWithId = posts.map((post, i) => ({
+      ...post,
+      id: i,
+      feedId: feedWithId.id,
+    }));
+    return { feed: feedWithId, posts: postsWithId };
+  }
+
+  const { 
+    feeds: feedsFromState, 
+    posts: postsFromState, 
+  } = {...state.lists};
+
+  const lastFeed = feedsFromState[feedsFromState.length - 1];
+  const lastPost = postsFromState[postsFromState.length - 1];
+  const feedWithId = { ...feed, id: lastFeed.id + 1 };
+  const postsWithId = posts.map((post, i) => ({ 
+    ...post, 
+    id: lastPost.id + (i + 1), 
+    feedId: feedWithId.id,
+  }));
+  return { feed: feedWithId, posts: postsWithId };
+};
 
 export default () => {
   const elements = getElements();
   // Model
   const initialState = {
     status: 'filling',
-    enteredUrls: [],
+    urls: [],
     error: {},
+    lists: {},
   };
 
   const i18n = i18next.createInstance();
@@ -63,34 +95,56 @@ export default () => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const url = formData.get('url');
-  
-    schema.validate({ url }, { abortEarly: false })
+    watchedState.status = 'sending';
+
+    const validated = schema.validate({ url }, { abortEarly: false })
       .then(() => {
-        if (watchedState.enteredUrls.includes(url)) {
+        if (watchedState.urls.includes(url)) {
           watchedState.error = { exist: 'feedbacks.exist' };
           watchedState.status = 'invalid';
+          console.log(watchedState.error);
           return;
         }
 
         watchedState.error = {};
         watchedState.status = 'valid';
-        watchedState.enteredUrls.push(url);
 
         const allOriginsUrl = `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`
-        const response = axios.get(allOriginsUrl)
-          .then((res) => {
-            const { contents } = res.data;
-            console.log(typeof contents);
-            const parsedData = parse(contents);
-            console.log(parsedData);
-          })
-          .catch((err) => console.log(err));
+        return axios.get(allOriginsUrl);
       })
       .catch((err) => {
+        if (!err.inner) return;
+        watchedState.status = 'invalid';
         const errorName = err.inner[0].path;
         const [errorKey] = err.errors;
-        watchedState.status = 'invalid';
         watchedState.error = { [errorName]: errorKey };
       });
+  
+    validated
+      .then((res) => {
+        const parsedData = parse(res.data.contents);
+        const hasLists = !_.isEmpty(watchedState.lists);
+
+        console.log(res.data.contents);
+        const { feed, posts } = setId(parsedData, watchedState, hasLists);
+
+        if (!hasLists) {
+          watchedState.lists.feeds = [];
+          watchedState.lists.posts = [];
+        }
+        
+        watchedState.urls.push(url);
+        watchedState.lists.feeds.push(feed);
+        watchedState.lists.posts.push(...posts);
+        watchedState.status = 'finished';
+      })
+      .catch((err) => {
+        if (err.inner) return;
+        watchedState.status = 'invalid';
+        watchedState.error = { unknownError: 'feedbacks.unknownError' };
+      });
+      
   });
 };
+
+// watchedState.error = { invalidRSS: 'feedbacks.invalidRSS' };
