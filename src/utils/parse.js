@@ -8,8 +8,15 @@ const getElements = (doc) => ({
 
 export default (string) => {
   const parser = new DOMParser();
-  const doc = parser.parseFromString(string, 'application/xhtml+xml');
+  const doc = parser.parseFromString(string, 'application/xml');
+  const parserError = doc.querySelector('parsererror');
+  if (parserError) {
+    return {};
+  }
   const { feedElement, postsElement } = getElements(doc);
+  if (!feedElement && !postsElement) {
+    return {};
+  }
 
   const feed = {
     title: feedElement.title.textContent,
@@ -24,6 +31,5 @@ export default (string) => {
     const link = linkElement.textContent;
     return { title, description, link };
   });
-  
   return { feed, posts };
 };

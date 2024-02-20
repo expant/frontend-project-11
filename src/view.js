@@ -16,6 +16,11 @@ const renderError = (elements, t, state) => {
   feedback.classList.remove('text-success');
   feedback.classList.add('text-danger');
 
+  if (state.error.invalidRSS) {
+    feedback.textContent = t(state.error.invalidRSS);
+    return;
+  }
+
   if (state.error.unknownError) {
     feedback.textContent = t(state.error.unknownError);
     return;

@@ -97,7 +97,7 @@ export default () => {
     const url = formData.get('url');
     watchedState.status = 'sending';
 
-    const validated = schema.validate({ url }, { abortEarly: false })
+    schema.validate({ url }, { abortEarly: false })
       .then(() => {
         if (watchedState.urls.includes(url)) {
           watchedState.error = { exist: 'feedbacks.exist' };
@@ -118,16 +118,19 @@ export default () => {
         const errorName = err.inner[0].path;
         const [errorKey] = err.errors;
         watchedState.error = { [errorName]: errorKey };
-      });
-  
-    validated
+      })
       .then((res) => {
+        if (!res) return;
         const parsedData = parse(res.data.contents);
+        if (_.isEmpty(parsedData)) {
+          watchedState.status = 'invalid';
+          watchedState.error = { invalidRSS: 'feedbacks.invalidRSS' };
+          return;
+        }
+
         const hasLists = !_.isEmpty(watchedState.lists);
-
-        console.log(res.data.contents);
         const { feed, posts } = setId(parsedData, watchedState, hasLists);
-
+        
         if (!hasLists) {
           watchedState.lists.feeds = [];
           watchedState.lists.posts = [];
@@ -139,7 +142,6 @@ export default () => {
         watchedState.status = 'finished';
       })
       .catch((err) => {
-        if (err.inner) return;
         watchedState.status = 'invalid';
         watchedState.error = { unknownError: 'feedbacks.unknownError' };
       });
