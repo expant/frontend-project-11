@@ -5,7 +5,7 @@ import { isEmpty } from 'lodash';
 import watch from './view.js';
 import resources from './locales/index.js';
 import parse from './utils/parse.js';
-// import watchUpdates from './utils/watchUpdates.js';
+import watchUpdates from './utils/watchUpdates.js';
 
 yup.setLocale({
   string: {
@@ -42,7 +42,7 @@ const getElements = () => ({
   }
 });
 
-const setId = (data, state) => {
+const setId = (data, state, feedId) => {
   const { feed, posts } = {...data};
   if (isEmpty(state.lists)) {
     const feedWithId = { ...feed, id: 0 };
@@ -58,6 +58,17 @@ const setId = (data, state) => {
     feeds: feedsFromState, 
     posts: postsFromState, 
   } = {...state.lists};
+  if (feedId) {
+    const existFeed = feeds.find((feed) => feed.id === feedId);
+    if (existFeed) {
+      const postsWithId = posts.map((post, i) => ({ 
+        ...post, 
+        id: existFeed.id + (i + 1), 
+        feedId: existFeed.id,
+      }));
+      return { posts: postsWithId };
+    }
+  }
 
   const lastFeed = feedsFromState[feedsFromState.length - 1];
   const lastPost = postsFromState[postsFromState.length - 1];
@@ -91,7 +102,39 @@ export default () => {
   const watchedState = watch(elements, i18n, initialState);
 
   // Controller
-  // watchUpdates(urls, lists, watchedState);
+  // watchUpdates(watchedState);
+  const watchUpdates = () => {
+    if (watchedState.urls.length !== 0) {
+      watchedState.urls = watchedState.urls.map(({ url, contentLength }, i) => {
+        // const currentFlow = watchedState.lists.posts.filter((post) => post.feedId === i);
+        const allOriginsUrl = `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
+        const urlObj = axios.get(allOriginsUrl).then((res) => {
+          const { content_length: newContentLength } = res.data.status;
+          if (newContentLength !== contentLength) {
+            const parsedData = parse(res.data.contents);
+
+            if (isEmpty(parsedData)) {
+              watchedState.status = 'invalid';
+              watchedState.error = { invalidRSS: 'feedbacks.invalidRSS' };
+              return;
+            }
+            
+            const currentFeed = watchedState.lists.feeds.find((feed) => feed.id === i);
+            const otherPosts = watchedState.lists.posts.filter((post) => post.feedId !== currentFeed.id);
+            const { posts } = setId(parsedData, watchedState, currentFeed.id);
+            watchedState.lists.posts = [...otherPosts, ...posts];
+            watchedState.status = 'finished';
+            return { url, contentLength: newContentLength };
+          }
+          return { url, contentLength };
+        });
+        return urlObj;
+      });
+    }
+  
+    setTimeout(watchUpdates, 5000);
+  };
+  watchUpdates();
   const { form } = elements.init.rssForm;
   form.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -102,7 +145,8 @@ export default () => {
     schema.validate({ url }, { abortEarly: false })
       // sending a request
       .then(() => {
-        if (watchedState.urls.includes(url)) {
+        const existingUrl = watchedState.urls.find((currentUrl) => currentUrl === url);
+        if (existingUrl) {
           watchedState.error = { exist: 'feedbacks.exist' };
           watchedState.status = 'invalid';
           return;
@@ -123,7 +167,6 @@ export default () => {
       // Parsing
       .then((res) => {
         if (!res) return;
-        console.log(res.config.url);
         const parsedData = parse(res.data.contents);
 
         if (isEmpty(parsedData)) {
@@ -139,7 +182,8 @@ export default () => {
           watchedState.lists.posts = [];
         }
         
-        watchedState.urls.push(url);
+        const { content_length: contentLength } = res.data.status;
+        watchedState.urls.push({ url, contentLength });
         watchedState.lists.feeds.push(feed);
         watchedState.lists.posts.push(...posts);
         watchedState.status = 'finished';

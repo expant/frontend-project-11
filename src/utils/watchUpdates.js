@@ -1,14 +1,17 @@
-const watchUpdates = (urls, lists) => {
-  if (urls.length === 0) {
-    setTimeout(watchUpdates, 5000);
+const watchUpdates = (state) => {
+  if (state.urls.length === 0) {
+    console.log(state.urls.length);
+    setTimeout((state) => watchUpdates(state), 5000);
   }
 
-  const { posts } = lists;
-  urls.forEach((url, i) => {
-    const currentFlow = posts.filter((post) => post.feedId === i);
-  });
+  if (state.urls.length !== 0) {
+    state.urls.forEach((url, i) => {
+      const currentFlow = state.lists.posts.filter((post) => post.feedId === i);
+      console.log(currentFlow);
+    });
+  }
 
-  setTimeout(watchUpdates, 5000);
+  // setTimeout((, 5000);
 };
 
 export default watchUpdates;
