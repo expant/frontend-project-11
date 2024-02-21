@@ -14,14 +14,11 @@ export default (string) => {
     return {};
   }
   const { feedElement, postsElement } = getElements(doc);
-  if (!feedElement && !postsElement) {
-    return {};
-  }
-
   const feed = {
     title: feedElement.title.textContent,
     description: feedElement.description.textContent,
   };
+
   const posts = Array.from(postsElement).map((postElement) => {
     const titleElement = postElement.querySelector('title');
     const descriptionElement = postElement.querySelector('description');

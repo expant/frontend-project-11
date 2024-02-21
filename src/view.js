@@ -1,4 +1,5 @@
 import onChange from 'on-change';
+import { isEmpty } from 'lodash';
 
 const renderText = (elements, t) => {
   elements.title.textContent = t('title');
@@ -8,29 +9,18 @@ const renderText = (elements, t) => {
   elements.example.textContent = t('example');
 };
 
-const renderError = (elements, t, state) => {
+const renderError = (elements, t, error) => {
+  if (isEmpty(error)) {
+    return;
+  }
   const { feedback } = elements;
   const { field } = elements.init.rssForm;
+  const [, pathToFeedbackText] = Object.entries(error).flatMap((err) => err);
 
   field.classList.add('is-invalid');
   feedback.classList.remove('text-success');
   feedback.classList.add('text-danger');
-
-  if (state.error.invalidRSS) {
-    feedback.textContent = t(state.error.invalidRSS);
-    return;
-  }
-
-  if (state.error.unknownError) {
-    feedback.textContent = t(state.error.unknownError);
-    return;
-  }
-
-  if (state.error.exist) {
-    feedback.textContent = t(state.error.exist);
-    return;
-  }
-  feedback.textContent = t(state.error.url);
+  feedback.textContent = t(pathToFeedbackText);
 };
 
 const renderFeed = (feedsListElement, feed) => {
@@ -49,28 +39,39 @@ const renderFeed = (feedsListElement, feed) => {
   feedsListElement.append(feedElement);
 };
 
-// const renderPosts = (postsListElement, postsState) => {
-//   console.log(postsState);
-//   postsState.forEach((post) => {
-//     const { id, title, description, link } = post;
+const renderPosts = (postsListElement, postsState) => {
+  postsListElement.innerHTML = '';
+  postsState.forEach((post) => {
+    const { id, title, description, link } = post;
 
-//     const postElement = document.createElement('li');
-//     const titleElement = document.createElement('a');
-//     const button = document.createElement('button');
+    const postElement = document.createElement('li');
+    const titleElement = document.createElement('a');
+    const button = document.createElement('button');
 
-//     postElement.classList.add(
-//       'list-group-item', 
-//       'd-flex', 
-//       'justify-content-between', 
-//       'align-items-start', 
-//       'border-0', 
-//       'border-end-0'
-//     );
-//     titleElement.classList.add('fw-bold');
-//     titleElement.setAttribute('href', link);
-//     titleElement.setAttribute('data-id', 'id')
-//   });
-// }
+    postElement.classList.add(
+      'list-group-item', 
+      'd-flex', 
+      'justify-content-between', 
+      'align-items-start', 
+      'border-0', 
+      'border-end-0'
+    );
+    titleElement.classList.add('fw-bold');
+    button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
+    titleElement.setAttribute('href', link);
+    titleElement.setAttribute('data-id', 'id');
+    titleElement.setAttribute('target', '_blank');
+    titleElement.setAttribute('rel', 'noopener noreferrer');
+    button.setAttribute('data-id', 'id');
+    button.setAttribute('data-bs-target', '#modal');
+    button.setAttribute('data-bs-toggle', 'modal');
+    titleElement.textContent = title;
+    button.textContent = 'Просмотр';
+    postElement.append(titleElement);
+    postElement.append(button);
+    postsListElement.append(postElement);
+  });
+}
 
 const renderRSS = (elements, t, state) => {
   const { posts, feeds } = elements;
@@ -81,35 +82,46 @@ const renderRSS = (elements, t, state) => {
   const feedsListElement = feeds.list;
   const lastFeed = state.feeds[state.feeds.length - 1];
   renderFeed(feedsListElement, lastFeed);
-  // renderPosts(postsListElement, state.posts, lastFeed.id);
+  renderPosts(postsListElement, state.posts);
 };
 
 export default (elements, i18n, initialState) => {
   const { t } = i18n;
+  const { feedback } = elements;
+  const { field, button } = elements.init.rssForm;
   renderText(elements.init, t);
 
   const watchedState = onChange(initialState, (path, value) => {  
-    const { field } = elements.init.rssForm;
-
-    if (Object.keys(watchedState.error).length !== 0) {
-      field.removeAttribute('readonly');
-      renderError(elements, t, watchedState);
+    if (path === 'error') {
+      renderError(elements, t, value);
+      return;
     }
 
     if (watchedState.status === 'sending') {
-      field.setAttribute('readonly', 'true');
+      field.classList.remove('is-invalid');
+      feedback.classList.remove('text-danger');
+      button.setAttribute('disabled', '');
+      field.setAttribute('readonly', '');
+      feedback.textContent = '';
+      return;
     }
 
     if (watchedState.status === 'finished') {
-      const { feedback } = elements;
       feedback.textContent = t('feedbacks.success');
       feedback.classList.add('text-success');
-      feedback.classList.remove('text-danger');
       field.removeAttribute('readonly');
+      button.removeAttribute('disabled');
       field.classList.remove('is-invalid');
       field.focus();
       field.value = '';
       renderRSS(elements, t, watchedState.lists);
+      return;
+    }
+
+    if (watchedState.status === 'invalid') {
+      field.removeAttribute('readonly');
+      button.removeAttribute('disabled');
+      return;
     }
   });
 

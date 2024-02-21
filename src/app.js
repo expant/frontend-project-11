@@ -1,10 +1,11 @@
 import i18next from 'i18next';
 import * as yup from 'yup';
 import axios from 'axios';
-import _ from 'lodash';
+import { isEmpty } from 'lodash';
 import watch from './view.js';
 import resources from './locales/index.js';
 import parse from './utils/parse.js';
+// import watchUpdates from './utils/watchUpdates.js';
 
 yup.setLocale({
   string: {
@@ -41,9 +42,9 @@ const getElements = () => ({
   }
 });
 
-const setId = (data, state, hasLists) => {
+const setId = (data, state) => {
   const { feed, posts } = {...data};
-  if (!hasLists) {
+  if (isEmpty(state.lists)) {
     const feedWithId = { ...feed, id: 0 };
     const postsWithId = posts.map((post, i) => ({
       ...post,
@@ -90,6 +91,7 @@ export default () => {
   const watchedState = watch(elements, i18n, initialState);
 
   // Controller
+  // watchUpdates(urls, lists, watchedState);
   const { form } = elements.init.rssForm;
   form.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -98,40 +100,41 @@ export default () => {
     watchedState.status = 'sending';
 
     schema.validate({ url }, { abortEarly: false })
+      // sending a request
       .then(() => {
         if (watchedState.urls.includes(url)) {
           watchedState.error = { exist: 'feedbacks.exist' };
           watchedState.status = 'invalid';
-          console.log(watchedState.error);
           return;
         }
-
+        
         watchedState.error = {};
         watchedState.status = 'valid';
-
-        const allOriginsUrl = `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`
+        const allOriginsUrl = `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
         return axios.get(allOriginsUrl);
       })
       .catch((err) => {
         if (!err.inner) return;
-        watchedState.status = 'invalid';
         const errorName = err.inner[0].path;
         const [errorKey] = err.errors;
+        watchedState.status = 'invalid';
         watchedState.error = { [errorName]: errorKey };
       })
+      // Parsing
       .then((res) => {
         if (!res) return;
+        console.log(res.config.url);
         const parsedData = parse(res.data.contents);
-        if (_.isEmpty(parsedData)) {
+
+        if (isEmpty(parsedData)) {
           watchedState.status = 'invalid';
           watchedState.error = { invalidRSS: 'feedbacks.invalidRSS' };
           return;
         }
 
-        const hasLists = !_.isEmpty(watchedState.lists);
-        const { feed, posts } = setId(parsedData, watchedState, hasLists);
-        
-        if (!hasLists) {
+        const { feed, posts } = setId(parsedData, watchedState);
+
+        if (isEmpty(watchedState.lists)) {
           watchedState.lists.feeds = [];
           watchedState.lists.posts = [];
         }
@@ -144,9 +147,20 @@ export default () => {
       .catch((err) => {
         watchedState.status = 'invalid';
         watchedState.error = { unknownError: 'feedbacks.unknownError' };
-      });
-      
+      });      
   });
 };
 
-// watchedState.error = { invalidRSS: 'feedbacks.invalidRSS' };
+
+
+// NetworkError: 
+// http://www.mk.ru/rss/politics/index.xml
+
+  // setTimeout(() => {
+  //   if (!res) {
+  //     watchedState.status = 'invalid';
+  //     watchedState.error = { networkError: 'feedbacks.networkError' };
+  //     console.log('5s');
+  //     return;
+  //   }
+  // }, 1000);
