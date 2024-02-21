@@ -13,6 +13,7 @@ export default {
       exist: 'RSS уже существует',
       unknownError: 'Неизвестная ошибка. Что-то пошло не так.',
       invalidRSS: 'Ресурс не содержит валидный RSS',
+      networkError: 'Ошибка сети',
     },
     posts: 'Посты',
     feeds: 'Фиды',
