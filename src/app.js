@@ -5,7 +5,7 @@ import { isEmpty } from 'lodash';
 import watch from './view.js';
 import resources from './locales/index.js';
 import parse from './utils/parse.js';
-import watchUpdates from './utils/watchUpdates.js';
+// import watchUpdates from './utils/watchUpdates.js';
 
 yup.setLocale({
   string: {
@@ -103,36 +103,35 @@ export default () => {
 
   // Controller
   // watchUpdates(watchedState);
-  const watchUpdates = () => {
-    if (watchedState.urls.length !== 0) {
-      watchedState.urls = watchedState.urls.map(({ url, contentLength }, i) => {
-        // const currentFlow = watchedState.lists.posts.filter((post) => post.feedId === i);
-        const allOriginsUrl = `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
-        const urlObj = axios.get(allOriginsUrl).then((res) => {
-          const { content_length: newContentLength } = res.data.status;
-          if (newContentLength !== contentLength) {
-            const parsedData = parse(res.data.contents);
+  const makeRequest = (url) => axios.get(
+    `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`
+  );
 
-            if (isEmpty(parsedData)) {
-              watchedState.status = 'invalid';
-              watchedState.error = { invalidRSS: 'feedbacks.invalidRSS' };
-              return;
-            }
-            
-            const currentFeed = watchedState.lists.feeds.find((feed) => feed.id === i);
-            const otherPosts = watchedState.lists.posts.filter((post) => post.feedId !== currentFeed.id);
-            const { posts } = setId(parsedData, watchedState, currentFeed.id);
-            watchedState.lists.posts = [...otherPosts, ...posts];
-            watchedState.status = 'finished';
-            return { url, contentLength: newContentLength };
-          }
-          return { url, contentLength };
-        });
-        return urlObj;
-      });
+  const checkParsedData = (data) => {
+
+  };
+
+  // Добавить cb в watchUpdates
+
+  const watchUpdates = () => {
+    if (watchedState.urls.length === 0) {
+      console.log('There are no posts');
+     
     }
-  
-    setTimeout(watchUpdates, 5000);
+
+    const newUrls = watchedState.urls.map(({ url, contentLength }) => {
+      const res = makeRequest(url).then((res) => res);
+      const { content_length: newContentLength } = res.data.status;
+      
+      if (contentLength === newContentLength) {
+        return { url, contentLength };
+      }
+
+      
+    });
+
+    console.log(newUrls);
+    return setTimeout(watchUpdates, 5000);
   };
   watchUpdates();
   const { form } = elements.init.rssForm;
@@ -154,8 +153,7 @@ export default () => {
         
         watchedState.error = {};
         watchedState.status = 'valid';
-        const allOriginsUrl = `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
-        return axios.get(allOriginsUrl);
+        return makeRequest(url);
       })
       .catch((err) => {
         if (!err.inner) return;
@@ -168,20 +166,18 @@ export default () => {
       .then((res) => {
         if (!res) return;
         const parsedData = parse(res.data.contents);
-
+    
         if (isEmpty(parsedData)) {
           watchedState.status = 'invalid';
           watchedState.error = { invalidRSS: 'feedbacks.invalidRSS' };
           return;
         }
-
-        const { feed, posts } = setId(parsedData, watchedState);
-
         if (isEmpty(watchedState.lists)) {
           watchedState.lists.feeds = [];
           watchedState.lists.posts = [];
         }
-        
+    
+        const { feed, posts } = setId(parsedData, watchedState);
         const { content_length: contentLength } = res.data.status;
         watchedState.urls.push({ url, contentLength });
         watchedState.lists.feeds.push(feed);
@@ -208,3 +204,30 @@ export default () => {
   //     return;
   //   }
   // }, 1000);
+
+
+
+  // watchedState.urls = watchedState.urls.map(({ url, contentLength }, i) => {
+  //   const allOriginsUrl = `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
+  //   const urlObj = axios.get(allOriginsUrl).then((res) => {
+  //     const { content_length: newContentLength } = res.data.status;
+  //     if (newContentLength !== contentLength) {
+  //       const parsedData = parse(res.data.contents);
+
+  //       if (isEmpty(parsedData)) {
+  //         watchedState.status = 'invalid';
+  //         watchedState.error = { invalidRSS: 'feedbacks.invalidRSS' };
+  //         return;
+  //       }
+        
+  //       const currentFeed = watchedState.lists.feeds.find((feed) => feed.id === i);
+  //       const otherPosts = watchedState.lists.posts.filter((post) => post.feedId !== currentFeed.id);
+  //       const { posts } = setId(parsedData, watchedState, currentFeed.id);
+  //       watchedState.lists.posts = [...otherPosts, ...posts];
+  //       watchedState.status = 'finished';
+  //       return { url, contentLength: newContentLength };
+  //     }
+  //     return { url, contentLength };
+  //   });
+  //   return urlObj;
+  // });
