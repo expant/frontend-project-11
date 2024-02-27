@@ -41,6 +41,7 @@ const renderFeed = (feedsListElement, feed) => {
 
 const renderPosts = (postsListElement, postsState) => {
   postsListElement.innerHTML = '';
+  console.log(postsState);
   postsState.forEach((post) => {
     const { id, title, description, link } = post;
 
@@ -92,37 +93,64 @@ export default (elements, i18n, initialState) => {
   renderText(elements.init, t);
 
   const watchedState = onChange(initialState, (path, value) => {  
-    if (path === 'error') {
-      renderError(elements, t, value);
-      return;
+    switch (path) {
+      case 'error': {
+        renderError(elements, t, value);
+        break;
+      }
+      case 'lists.posts': {
+        const { posts } = elements;
+        posts.title.textContent = t('posts');
+        const postsListElement = posts.list;
+        console.log(postsListElement, watchedState.lists.posts)
+        renderPosts(postsListElement, watchedState.lists.posts);
+        break;
+      }
+      case 'lists.feeds': {
+        const { feeds } = elements;
+        feeds.title.textContent = t('feeds');
+        const feedsListElement = feeds.list;
+        const lastFeed = watchedState.lists.feeds[watchedState.lists.feeds.length - 1];
+        console.log(feedsListElement, lastFeed, watchedState.lists.feeds);
+        renderFeed(feedsListElement, lastFeed);
+        return;
+      }
+      default: console.log(`Unknown path ${path}`);     
     }
 
-    if (watchedState.status === 'sending') {
-      field.classList.remove('is-invalid');
-      feedback.classList.remove('text-danger');
-      button.setAttribute('disabled', '');
-      field.setAttribute('readonly', '');
-      feedback.textContent = '';
-      return;
+    switch (watchedState.status) {
+      case 'sending': {
+        field.classList.remove('is-invalid');
+        feedback.classList.remove('text-danger');
+        button.setAttribute('disabled', '');
+        field.setAttribute('readonly', '');
+        feedback.textContent = '';
+        break;
+      }
+      case 'finished': {
+        feedback.textContent = t('feedbacks.success');
+        feedback.classList.add('text-success');
+        field.removeAttribute('readonly');
+        button.removeAttribute('disabled');
+        field.classList.remove('is-invalid');
+        field.focus();
+        field.value = '';
+        break;
+      }
+      case 'invalid': {
+        field.removeAttribute('readonly');
+        button.removeAttribute('disabled');
+        return;
+      }
+      default: console.log(`Unknown status ${watchedState.status}`);     
     }
 
-    if (watchedState.status === 'finished') {
-      feedback.textContent = t('feedbacks.success');
-      feedback.classList.add('text-success');
-      field.removeAttribute('readonly');
-      button.removeAttribute('disabled');
-      field.classList.remove('is-invalid');
-      field.focus();
-      field.value = '';
-      renderRSS(elements, t, watchedState.lists);
-      return;
-    }
+    // if (watchedState.status === 'updated') {
+    //   console.log(watchedState.status);
+    //   return;
+    // }
 
-    if (watchedState.status === 'invalid') {
-      field.removeAttribute('readonly');
-      button.removeAttribute('disabled');
-      return;
-    }
+
   });
 
   return watchedState;

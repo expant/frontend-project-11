@@ -1,11 +1,10 @@
 import i18next from 'i18next';
 import * as yup from 'yup';
 import axios from 'axios';
-import { isEmpty } from 'lodash';
+import { isEmpty, sortBy } from 'lodash';
 import watch from './view.js';
 import resources from './locales/index.js';
 import parse from './utils/parse.js';
-// import watchUpdates from './utils/watchUpdates.js';
 
 yup.setLocale({
   string: {
@@ -42,9 +41,25 @@ const getElements = () => ({
   }
 });
 
-const setId = (data, state, feedId) => {
+const setIdOfTheUpdatedData = (data, state, feedId) => {
+  const { posts } = {...data};
+  const { posts: postsFromState } = {...state.lists};
+
+  console.log()
+  const lastPost = postsFromState[postsFromState.length - 1];
+  console.log(`lastPost: ${lastPost}`);
+
+  const postsWithId = posts.map((post, i) => ({ 
+    ...post, 
+    id: lastPost.id + (i + 1), 
+    feedId,
+  }));
+  return { posts: postsWithId };
+}
+
+const setId = (data, state) => {
   const { feed, posts } = {...data};
-  if (isEmpty(state.lists)) {
+  if (isEmpty(state.lists.feeds) && isEmpty(state.lists.posts)) {
     const feedWithId = { ...feed, id: 0 };
     const postsWithId = posts.map((post, i) => ({
       ...post,
@@ -58,23 +73,12 @@ const setId = (data, state, feedId) => {
     feeds: feedsFromState, 
     posts: postsFromState, 
   } = {...state.lists};
-  if (feedId) {
-    const existFeed = feeds.find((feed) => feed.id === feedId);
-    if (existFeed) {
-      const postsWithId = posts.map((post, i) => ({ 
-        ...post, 
-        id: existFeed.id + (i + 1), 
-        feedId: existFeed.id,
-      }));
-      return { posts: postsWithId };
-    }
-  }
 
   const lastFeed = feedsFromState[feedsFromState.length - 1];
   const lastPost = postsFromState[postsFromState.length - 1];
   const feedWithId = { ...feed, id: lastFeed.id + 1 };
   const postsWithId = posts.map((post, i) => ({ 
-    ...post, 
+    ...post,
     id: lastPost.id + (i + 1), 
     feedId: feedWithId.id,
   }));
@@ -88,7 +92,10 @@ export default () => {
     status: 'filling',
     urls: [],
     error: {},
-    lists: {},
+    lists: {
+      feeds: [],
+      posts: [],
+    },
   };
 
   const i18n = i18next.createInstance();
@@ -102,38 +109,48 @@ export default () => {
   const watchedState = watch(elements, i18n, initialState);
 
   // Controller
-  // watchUpdates(watchedState);
   const makeRequest = (url) => axios.get(
     `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`
   );
 
-  const checkParsedData = (data) => {
-
-  };
-
   // Добавить cb в watchUpdates
 
-  const watchUpdates = () => {
+  const watchUpdates = (cb) => {
     if (watchedState.urls.length === 0) {
-      console.log('There are no posts');
-     
+      return setTimeout(watchUpdates, 5000);
     }
-
-    const newUrls = watchedState.urls.map(({ url, contentLength }) => {
-      const res = makeRequest(url).then((res) => res);
-      const { content_length: newContentLength } = res.data.status;
-      
-      if (contentLength === newContentLength) {
-        return { url, contentLength };
-      }
-
-      
-    });
-
-    console.log(newUrls);
+    cb();
     return setTimeout(watchUpdates, 5000);
   };
-  watchUpdates();
+
+  // const watchUpdates = () => {
+    
+
+
+  //   return setTimeout(watchUpdates, 5000);
+  // };
+
+  watchUpdates(() => watchedState.urls
+    .forEach(({ url, contentLength, feedId }) => makeRequest(url)
+      .then((res) => {
+        const { content_length: newContentLength } = res.data.status;
+        if (contentLength === newContentLength) {
+          return;
+        }
+
+        const parsedData = parse(res.data.contents);
+        const { posts } = setIdOfTheUpdatedData(parsedData, watchedState, feedId);
+        const otherPosts = watchedState.lists.posts.filter((post) => post.feedId !== feedId);
+        const otherUrls = watchedState.urls.filter((url) => url.feedId !== feedId);
+        const newUrl = { url, contentLength: newContentLength, feedId };
+
+        watchedState.urls = [...otherUrls, newUrl];
+        watchedState.lists.posts = [ ...posts, ...otherPosts ];
+        watchedState.status = 'updated';
+      })
+    )
+  );
+
   const { form } = elements.init.rssForm;
   form.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -166,22 +183,17 @@ export default () => {
       .then((res) => {
         if (!res) return;
         const parsedData = parse(res.data.contents);
-    
         if (isEmpty(parsedData)) {
           watchedState.status = 'invalid';
           watchedState.error = { invalidRSS: 'feedbacks.invalidRSS' };
           return;
         }
-        if (isEmpty(watchedState.lists)) {
-          watchedState.lists.feeds = [];
-          watchedState.lists.posts = [];
-        }
-    
+
         const { feed, posts } = setId(parsedData, watchedState);
         const { content_length: contentLength } = res.data.status;
-        watchedState.urls.push({ url, contentLength });
-        watchedState.lists.feeds.push(feed);
-        watchedState.lists.posts.push(...posts);
+        watchedState.urls.push({ url, contentLength, feedId: feed.id });
+        watchedState.lists.feeds = [...watchedState.lists.feeds, feed];
+        watchedState.lists.posts = [...watchedState.lists.posts, ...posts];
         watchedState.status = 'finished';
       })
       .catch((err) => {
@@ -196,38 +208,4 @@ export default () => {
 // NetworkError: 
 // http://www.mk.ru/rss/politics/index.xml
 
-  // setTimeout(() => {
-  //   if (!res) {
-  //     watchedState.status = 'invalid';
-  //     watchedState.error = { networkError: 'feedbacks.networkError' };
-  //     console.log('5s');
-  //     return;
-  //   }
-  // }, 1000);
-
-
-
-  // watchedState.urls = watchedState.urls.map(({ url, contentLength }, i) => {
-  //   const allOriginsUrl = `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
-  //   const urlObj = axios.get(allOriginsUrl).then((res) => {
-  //     const { content_length: newContentLength } = res.data.status;
-  //     if (newContentLength !== contentLength) {
-  //       const parsedData = parse(res.data.contents);
-
-  //       if (isEmpty(parsedData)) {
-  //         watchedState.status = 'invalid';
-  //         watchedState.error = { invalidRSS: 'feedbacks.invalidRSS' };
-  //         return;
-  //       }
-        
-  //       const currentFeed = watchedState.lists.feeds.find((feed) => feed.id === i);
-  //       const otherPosts = watchedState.lists.posts.filter((post) => post.feedId !== currentFeed.id);
-  //       const { posts } = setId(parsedData, watchedState, currentFeed.id);
-  //       watchedState.lists.posts = [...otherPosts, ...posts];
-  //       watchedState.status = 'finished';
-  //       return { url, contentLength: newContentLength };
-  //     }
-  //     return { url, contentLength };
-  //   });
-  //   return urlObj;
-  // });
+// https://lorem-rss.hexlet.app/feed?unit=second&interval=5
