@@ -102,7 +102,6 @@ export default (elements, i18n, initialState) => {
         const { posts } = elements;
         posts.title.textContent = t('posts');
         const postsListElement = posts.list;
-        console.log(postsListElement, watchedState.lists.posts)
         renderPosts(postsListElement, watchedState.lists.posts);
         break;
       }
@@ -111,11 +110,10 @@ export default (elements, i18n, initialState) => {
         feeds.title.textContent = t('feeds');
         const feedsListElement = feeds.list;
         const lastFeed = watchedState.lists.feeds[watchedState.lists.feeds.length - 1];
-        console.log(feedsListElement, lastFeed, watchedState.lists.feeds);
         renderFeed(feedsListElement, lastFeed);
         return;
       }
-      default: console.log(`Unknown path ${path}`);     
+      default: console.log(`Unknown path ${path}: ${value}`);     
     }
 
     switch (watchedState.status) {
@@ -149,8 +147,6 @@ export default (elements, i18n, initialState) => {
     //   console.log(watchedState.status);
     //   return;
     // }
-
-
   });
 
   return watchedState;

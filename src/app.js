@@ -6,6 +6,9 @@ import watch from './view.js';
 import resources from './locales/index.js';
 import parse from './utils/parse.js';
 
+const UPDATE_INTERVAL = 5000;
+const TIMEOUT = 10000;
+
 yup.setLocale({
   string: {
     url: 'feedbacks.invalid',
@@ -15,6 +18,10 @@ yup.setLocale({
 const schema = yup.object({
   url: yup.string().required().url(),
 });
+
+const makeRequest = (url) => axios.get(
+  `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`
+);
 
 const getElements = () => ({
   init: {
@@ -44,18 +51,14 @@ const getElements = () => ({
 const setIdOfTheUpdatedData = (data, state, feedId) => {
   const { posts } = {...data};
   const { posts: postsFromState } = {...state.lists};
-
-  console.log()
   const lastPost = postsFromState[postsFromState.length - 1];
-  console.log(`lastPost: ${lastPost}`);
-
   const postsWithId = posts.map((post, i) => ({ 
     ...post, 
     id: lastPost.id + (i + 1), 
     feedId,
   }));
   return { posts: postsWithId };
-}
+};
 
 const setId = (data, state) => {
   const { feed, posts } = {...data};
@@ -109,30 +112,22 @@ export default () => {
   const watchedState = watch(elements, i18n, initialState);
 
   // Controller
-  const makeRequest = (url) => axios.get(
-    `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`
-  );
-
-  // Добавить cb в watchUpdates
-
-  const watchUpdates = (cb) => {
-    if (watchedState.urls.length === 0) {
-      return setTimeout(watchUpdates, 5000);
-    }
-    cb();
-    return setTimeout(watchUpdates, 5000);
+  const handleError = (name, key) => {
+    watchedState.status = 'invalid';
+    watchedState.error = { [name]: key };
   };
 
-  // const watchUpdates = () => {
-    
+  const startTimeout = () => new Promise(
+    (_, reject) => setTimeout(() => {
+      handleError('networkError', 'feedbacks.networkError');
+      reject();
+    }, TIMEOUT));
 
-
-  //   return setTimeout(watchUpdates, 5000);
-  // };
-
-  watchUpdates(() => watchedState.urls
-    .forEach(({ url, contentLength, feedId }) => makeRequest(url)
-      .then((res) => {
+  const updatePosts = () => watchedState.urls
+    .forEach(({ url, contentLength, feedId }) => {
+      const res = Promise.race([makeRequest(url), startTimeout()]);
+      // console.log('Произошло в участке добавления нового фида');
+      res.then((res) => {
         const { content_length: newContentLength } = res.data.status;
         if (contentLength === newContentLength) {
           return;
@@ -140,16 +135,24 @@ export default () => {
 
         const parsedData = parse(res.data.contents);
         const { posts } = setIdOfTheUpdatedData(parsedData, watchedState, feedId);
-        const otherPosts = watchedState.lists.posts.filter((post) => post.feedId !== feedId);
-        const otherUrls = watchedState.urls.filter((url) => url.feedId !== feedId);
+        const isNotEqual = (obj) => obj.feedId !== feedId;
+        const otherPosts = watchedState.lists.posts.filter(isNotEqual);
+        const otherUrls = watchedState.urls.filter(isNotEqual);
         const newUrl = { url, contentLength: newContentLength, feedId };
-
         watchedState.urls = [...otherUrls, newUrl];
         watchedState.lists.posts = [ ...posts, ...otherPosts ];
         watchedState.status = 'updated';
-      })
-    )
-  );
+      });
+    }); 
+
+  const watchPosts = () => {
+    if (watchedState.urls.length === 0) {
+      return setTimeout(watchPosts, UPDATE_INTERVAL);
+    }
+    updatePosts();
+    return setTimeout(watchPosts, UPDATE_INTERVAL);
+  };
+  watchPosts();
 
   const { form } = elements.init.rssForm;
   form.addEventListener('submit', (e) => {
@@ -170,14 +173,13 @@ export default () => {
         
         watchedState.error = {};
         watchedState.status = 'valid';
-        return makeRequest(url);
+        return Promise.race([makeRequest(url), startTimeout()]);
       })
       .catch((err) => {
         if (!err.inner) return;
-        const errorName = err.inner[0].path;
-        const [errorKey] = err.errors;
-        watchedState.status = 'invalid';
-        watchedState.error = { [errorName]: errorKey };
+        const name = err.inner[0].path;
+        const [key] = err.errors;
+        handleError(name, key);
       })
       // Parsing
       .then((res) => {
@@ -196,16 +198,15 @@ export default () => {
         watchedState.lists.posts = [...watchedState.lists.posts, ...posts];
         watchedState.status = 'finished';
       })
-      .catch((err) => {
-        watchedState.status = 'invalid';
-        watchedState.error = { unknownError: 'feedbacks.unknownError' };
-      });      
+      .catch(() => handleError('unknownError', 'feedbacks.unknownError'));  
   });
 };
-
-
 
 // NetworkError: 
 // http://www.mk.ru/rss/politics/index.xml
 
+// UnknownError:
+// http://itunes.apple.com/us/rss/toptvseasons/limit=100/genre=4000/xml?at=1001l5Uo
+
+// Updates:
 // https://lorem-rss.hexlet.app/feed?unit=second&interval=5
