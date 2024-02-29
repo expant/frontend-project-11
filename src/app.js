@@ -20,7 +20,8 @@ const schema = yup.object({
 });
 
 const makeRequest = (url) => axios.get(
-  `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`
+  `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`,
+  { timeout: TIMEOUT },
 );
 
 const getElements = () => ({
@@ -99,6 +100,9 @@ export default () => {
       feeds: [],
       posts: [],
     },
+    uiState: {
+      posts: [],
+    }
   };
 
   const i18n = i18next.createInstance();
@@ -117,17 +121,9 @@ export default () => {
     watchedState.error = { [name]: key };
   };
 
-  const startTimeout = () => new Promise(
-    (_, reject) => setTimeout(() => {
-      handleError('networkError', 'feedbacks.networkError');
-      reject();
-    }, TIMEOUT));
-
   const updatePosts = () => watchedState.urls
     .forEach(({ url, contentLength, feedId }) => {
-      const res = Promise.race([makeRequest(url), startTimeout()]);
-      // console.log('Произошло в участке добавления нового фида');
-      res.then((res) => {
+      makeRequest(url).then((res) => {
         const { content_length: newContentLength } = res.data.status;
         if (contentLength === newContentLength) {
           return;
@@ -141,6 +137,10 @@ export default () => {
         const newUrl = { url, contentLength: newContentLength, feedId };
         watchedState.urls = [...otherUrls, newUrl];
         watchedState.lists.posts = [ ...posts, ...otherPosts ];
+        // watchedState.uiState.posts = [
+        //   ...watchedState.uiState.posts, 
+        //   ...posts.map((post) => ({ id: post.id, viewed: false })),
+        // ];
         watchedState.status = 'updated';
       });
     }); 
@@ -164,7 +164,7 @@ export default () => {
     schema.validate({ url }, { abortEarly: false })
       // sending a request
       .then(() => {
-        const existingUrl = watchedState.urls.find((currentUrl) => currentUrl === url);
+        const existingUrl = watchedState.urls.find((currentUrl) => currentUrl.url === url);
         if (existingUrl) {
           watchedState.error = { exist: 'feedbacks.exist' };
           watchedState.status = 'invalid';
@@ -173,9 +173,13 @@ export default () => {
         
         watchedState.error = {};
         watchedState.status = 'valid';
-        return Promise.race([makeRequest(url), startTimeout()]);
+        return makeRequest(url);
       })
       .catch((err) => {
+        if (err.name || err.name === 'AxiosError') {
+          handleError('networkError', 'feedbacks.networkError');
+          return;
+        }
         if (!err.inner) return;
         const name = err.inner[0].path;
         const [key] = err.errors;
@@ -196,9 +200,26 @@ export default () => {
         watchedState.urls.push({ url, contentLength, feedId: feed.id });
         watchedState.lists.feeds = [...watchedState.lists.feeds, feed];
         watchedState.lists.posts = [...watchedState.lists.posts, ...posts];
+        watchedState.uiState.posts = [
+          ...watchedState.uiState.posts, 
+          ...posts.map((post) => ({ id: post.id, viewed: false })),
+        ];
         watchedState.status = 'finished';
       })
       .catch(() => handleError('unknownError', 'feedbacks.unknownError'));  
+ 
+    const { list } = elements.posts;
+    if (list.childNodes.length === 0) {
+      return;
+    }
+
+    const postViewBtns = list.querySelectorAll('li > button');
+    postViewBtns.forEach((postViewBtn) => {
+      postViewBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        console.log(e.target);
+      });
+    });
   });
 };
 

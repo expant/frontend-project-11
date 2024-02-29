@@ -41,10 +41,8 @@ const renderFeed = (feedsListElement, feed) => {
 
 const renderPosts = (postsListElement, postsState) => {
   postsListElement.innerHTML = '';
-  console.log(postsState);
   postsState.forEach((post) => {
-    const { id, title, description, link } = post;
-
+    const { id, title, link } = post;
     const postElement = document.createElement('li');
     const titleElement = document.createElement('a');
     const button = document.createElement('button');
@@ -60,10 +58,10 @@ const renderPosts = (postsListElement, postsState) => {
     titleElement.classList.add('fw-bold');
     button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
     titleElement.setAttribute('href', link);
-    titleElement.setAttribute('data-id', 'id');
+    titleElement.setAttribute('data-id', id);
     titleElement.setAttribute('target', '_blank');
     titleElement.setAttribute('rel', 'noopener noreferrer');
-    button.setAttribute('data-id', 'id');
+    button.setAttribute('data-id', id);
     button.setAttribute('data-bs-target', '#modal');
     button.setAttribute('data-bs-toggle', 'modal');
     titleElement.textContent = title;
@@ -96,7 +94,7 @@ export default (elements, i18n, initialState) => {
     switch (path) {
       case 'error': {
         renderError(elements, t, value);
-        break;
+        return;
       }
       case 'lists.posts': {
         const { posts } = elements;
