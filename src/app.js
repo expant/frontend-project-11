@@ -130,7 +130,14 @@ export default () => {
         }
 
         const parsedData = parse(res.data.contents);
-        const { posts } = setIdOfTheUpdatedData(parsedData, watchedState, feedId);
+        // const { posts } = setIdOfTheUpdatedData(parsedData, watchedState, feedId);
+
+        // const newPosts = posts.filter((post) => {
+          
+        // });
+
+
+
         const isNotEqual = (obj) => obj.feedId !== feedId;
         const otherPosts = watchedState.lists.posts.filter(isNotEqual);
         const otherUrls = watchedState.urls.filter(isNotEqual);
@@ -176,11 +183,12 @@ export default () => {
         return makeRequest(url);
       })
       .catch((err) => {
-        if (err.name || err.name === 'AxiosError') {
+        if (err.name && err.name === 'AxiosError') {
           handleError('networkError', 'feedbacks.networkError');
           return;
         }
         if (!err.inner) return;
+        console.log(err.name);
         const name = err.inner[0].path;
         const [key] = err.errors;
         handleError(name, key);
@@ -207,21 +215,38 @@ export default () => {
         watchedState.status = 'finished';
       })
       .catch(() => handleError('unknownError', 'feedbacks.unknownError'));  
- 
-    const { list } = elements.posts;
-    if (list.childNodes.length === 0) {
-      return;
-    }
-
-    const postViewBtns = list.querySelectorAll('li > button');
-    postViewBtns.forEach((postViewBtn) => {
-      postViewBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        console.log(e.target);
-      });
-    });
   });
+
+  // const { list } = elements.posts;
+  // if (list.childNodes.length === 0) {
+  //   return;
+  // }
+
+  // const postViewBtns = list.querySelectorAll('li > button');
+  // postViewBtns.forEach((postViewBtn) => {
+  //   postViewBtn.addEventListener('click', (e) => {
+  //     e.preventDefault();
+  //     console.log(e.target);
+  //   });
+  // });
 };
+
+
+
+
+
+// ---------- Проблемы и задачи ------------------------------------------------------
+
+// 1. Неверно отображаются обновлённые потоки
+// 1.1 Добавить catch() в updatePosts, чтобы получать ошибки
+//
+// 2. Ошибки связанные с отображением модального окна
+//    ( Cannot read properties of undefined (reading 'backdrop') )
+
+
+
+
+// --------- URL-адреса для тестирования различных вариантов: (ошибки и тд) ----------------------------
 
 // NetworkError: 
 // http://www.mk.ru/rss/politics/index.xml
@@ -230,4 +255,5 @@ export default () => {
 // http://itunes.apple.com/us/rss/toptvseasons/limit=100/genre=4000/xml?at=1001l5Uo
 
 // Updates:
-// https://lorem-rss.hexlet.app/feed?unit=second&interval=5
+// https://lorem-rss.hexlet.app/feed?unit=second&interval=10
+      

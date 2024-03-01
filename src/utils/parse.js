@@ -13,6 +13,7 @@ export default (string) => {
   if (parserError) {
     return {};
   }
+
   const { feedElement, postsElement } = getElements(doc);
   const feed = {
     title: feedElement.title.textContent,
