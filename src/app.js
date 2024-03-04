@@ -130,20 +130,27 @@ export default () => {
         }
 
         const parsedData = parse(res.data.contents);
-        // const { posts } = setIdOfTheUpdatedData(parsedData, watchedState, feedId);
+        const newPosts = parsedData.posts.filter((post) => {
+          const hasPost = watchedState.lists.posts.find(
+            (postFromState) => postFromState.title === post.title,
+          );
+          return hasPost ? false : true;
+        });
 
-        // const newPosts = posts.filter((post) => {
-          
-        // });
+        const data = {
+          feed: parsedData.feed,
+          posts: newPosts,
+        };
+        const { posts } = setIdOfTheUpdatedData(data, watchedState, feedId);
 
-
+        console.log(posts);
 
         const isNotEqual = (obj) => obj.feedId !== feedId;
-        const otherPosts = watchedState.lists.posts.filter(isNotEqual);
+        // const otherPosts = watchedState.lists.posts.filter(isNotEqual);
         const otherUrls = watchedState.urls.filter(isNotEqual);
         const newUrl = { url, contentLength: newContentLength, feedId };
         watchedState.urls = [...otherUrls, newUrl];
-        watchedState.lists.posts = [ ...posts, ...otherPosts ];
+        watchedState.lists.posts = [...posts, ...watchedState.lists.posts];
         // watchedState.uiState.posts = [
         //   ...watchedState.uiState.posts, 
         //   ...posts.map((post) => ({ id: post.id, viewed: false })),
@@ -188,7 +195,7 @@ export default () => {
           return;
         }
         if (!err.inner) return;
-        console.log(err.name);
+        // console.log(err.name);
         const name = err.inner[0].path;
         const [key] = err.errors;
         handleError(name, key);
@@ -206,8 +213,8 @@ export default () => {
         const { feed, posts } = setId(parsedData, watchedState);
         const { content_length: contentLength } = res.data.status;
         watchedState.urls.push({ url, contentLength, feedId: feed.id });
-        watchedState.lists.feeds = [...watchedState.lists.feeds, feed];
-        watchedState.lists.posts = [...watchedState.lists.posts, ...posts];
+        watchedState.lists.feeds = [feed, ...watchedState.lists.feeds];
+        watchedState.lists.posts = [...posts, ...watchedState.lists.posts];
         watchedState.uiState.posts = [
           ...watchedState.uiState.posts, 
           ...posts.map((post) => ({ id: post.id, viewed: false })),
@@ -237,8 +244,7 @@ export default () => {
 
 // ---------- Проблемы и задачи ------------------------------------------------------
 
-// 1. Неверно отображаются обновлённые потоки
-// 1.1 Добавить catch() в updatePosts, чтобы получать ошибки
+// 1 Добавить catch() в updatePosts, чтобы получать ошибки
 //
 // 2. Ошибки связанные с отображением модального окна
 //    ( Cannot read properties of undefined (reading 'backdrop') )

@@ -36,7 +36,7 @@ const renderFeed = (feedsListElement, feed) => {
   descriptionElement.textContent = description;
   feedElement.append(titleElement);
   feedElement.append(descriptionElement);
-  feedsListElement.append(feedElement);
+  feedsListElement.prepend(feedElement);
 };
 
 const renderPosts = (postsListElement, postsState) => {
@@ -79,8 +79,8 @@ const renderRSS = (elements, t, state) => {
   feeds.title.textContent = t('feeds');
   const postsListElement = posts.list;
   const feedsListElement = feeds.list;
-  const lastFeed = state.feeds[state.feeds.length - 1];
-  renderFeed(feedsListElement, lastFeed);
+  const firstFeed = state.feeds[state.feeds.length - 1];
+  renderFeed(feedsListElement, firstFeed);
   renderPosts(postsListElement, state.posts);
 };
 
@@ -107,11 +107,11 @@ export default (elements, i18n, initialState) => {
         const { feeds } = elements;
         feeds.title.textContent = t('feeds');
         const feedsListElement = feeds.list;
-        const lastFeed = watchedState.lists.feeds[watchedState.lists.feeds.length - 1];
-        renderFeed(feedsListElement, lastFeed);
+        const firstFeed = watchedState.lists.feeds[0];
+        renderFeed(feedsListElement, firstFeed);
         return;
       }
-      default: console.log(`Unknown path ${path}: ${value}`);     
+      default: console.log(`Unknown path ${path}: ${value}`);    
     }
 
     switch (watchedState.status) {
@@ -135,10 +135,10 @@ export default (elements, i18n, initialState) => {
       }
       case 'invalid': {
         field.removeAttribute('readonly');
-        button.removeAttribute('disabled');
+        button.removeAttribute('disabled'); 
         return;
       }
-      default: console.log(`Unknown status ${watchedState.status}`);     
+      default: console.log(`Unknown status ${watchedState.status}`);        
     }
 
     // if (watchedState.status === 'updated') {
