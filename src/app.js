@@ -121,42 +121,42 @@ export default () => {
     watchedState.error = { [name]: key };
   };
 
+  const handleResponse = (res, urlObj) => {
+    const { url, contentLength, feedId } = urlObj;
+    const { content_length: newContentLength } = res.data.status;
+    if (contentLength === newContentLength) {
+      return;
+    }
+
+    const parsedData = parse(res.data.contents);
+    const newPosts = parsedData.posts.filter((post) => {
+      const currentPost = watchedState.lists.posts.find(
+        (postFromState) => postFromState.title === post.title,
+      );
+      return currentPost ? false : true;
+    });
+
+    const data = {
+      feed: parsedData.feed,
+      posts: newPosts,
+    };
+    const { posts } = setIdOfTheUpdatedData(data, watchedState, feedId);
+    const otherUrls = watchedState.urls.filter((url) => url.feedId !== feedId);
+    const newUrl = { url, contentLength: newContentLength, feedId };
+    watchedState.urls = [...otherUrls, newUrl];
+    watchedState.lists.posts = [...posts, ...watchedState.lists.posts];
+    // watchedState.uiState.posts = [
+    //   ...watchedState.uiState.posts, 
+    //   ...posts.map((post) => ({ id: post.id, viewed: false })),
+    // ];
+    watchedState.status = 'updated';
+  }
+
   const updatePosts = () => watchedState.urls
-    .forEach(({ url, contentLength, feedId }) => {
-      makeRequest(url).then((res) => {
-        const { content_length: newContentLength } = res.data.status;
-        if (contentLength === newContentLength) {
-          return;
-        }
-
-        const parsedData = parse(res.data.contents);
-        const newPosts = parsedData.posts.filter((post) => {
-          const hasPost = watchedState.lists.posts.find(
-            (postFromState) => postFromState.title === post.title,
-          );
-          return hasPost ? false : true;
-        });
-
-        const data = {
-          feed: parsedData.feed,
-          posts: newPosts,
-        };
-        const { posts } = setIdOfTheUpdatedData(data, watchedState, feedId);
-
-        console.log(posts);
-
-        const isNotEqual = (obj) => obj.feedId !== feedId;
-        // const otherPosts = watchedState.lists.posts.filter(isNotEqual);
-        const otherUrls = watchedState.urls.filter(isNotEqual);
-        const newUrl = { url, contentLength: newContentLength, feedId };
-        watchedState.urls = [...otherUrls, newUrl];
-        watchedState.lists.posts = [...posts, ...watchedState.lists.posts];
-        // watchedState.uiState.posts = [
-        //   ...watchedState.uiState.posts, 
-        //   ...posts.map((post) => ({ id: post.id, viewed: false })),
-        // ];
-        watchedState.status = 'updated';
-      });
+    .forEach((urlObj) => {
+      makeRequest(urlObj.url)
+        .then((res) => handleResponse(res, urlObj))
+        .catch(() => handleError('networkError', 'feedbacks.networkError'));
     }); 
 
   const watchPosts = () => {
@@ -195,7 +195,6 @@ export default () => {
           return;
         }
         if (!err.inner) return;
-        // console.log(err.name);
         const name = err.inner[0].path;
         const [key] = err.errors;
         handleError(name, key);
@@ -244,9 +243,7 @@ export default () => {
 
 // ---------- Проблемы и задачи ------------------------------------------------------
 
-// 1 Добавить catch() в updatePosts, чтобы получать ошибки
-//
-// 2. Ошибки связанные с отображением модального окна
+// 1. Ошибки связанные с отображением модального окна
 //    ( Cannot read properties of undefined (reading 'backdrop') )
 
 
