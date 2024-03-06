@@ -7,6 +7,8 @@ const renderText = (elements, t) => {
   elements.rssForm.label.textContent = t('rssForm.label');
   elements.rssForm.button.textContent = t('rssForm.button');
   elements.example.textContent = t('example');
+  elements.modal.readCompletely.textContent = t('modal.readCompletely');
+  elements.modal.close.textContent = t('modal.close');
 };
 
 const renderError = (elements, t, error) => {
@@ -111,7 +113,24 @@ export default (elements, i18n, initialState) => {
         renderFeed(feedsListElement, firstFeed);
         return;
       }
-      default: console.log(`Unknown path ${path}: ${value}`);    
+      case 'uiState.readPosts': {
+        const { 
+          title: modalElTitle, 
+          description: modalElDesc,
+          readCompletely,
+        } = elements.modal;
+
+        console.log(watchedState.uiState.readPosts);
+        const post = watchedState.uiState.readPosts[
+          watchedState.uiState.readPosts.length - 1
+        ];
+        const { title, description, link } = post;
+        modalElTitle.textContent = title;
+        modalElDesc.textContent = description;
+        readCompletely.setAttribute('href', link);
+      }
+      // default: console.log(`Unknown path ${path}: ${value}`);  
+      default: console.log(``);      
     }
 
     switch (watchedState.status) {
@@ -138,7 +157,8 @@ export default (elements, i18n, initialState) => {
         button.removeAttribute('disabled'); 
         return;
       }
-      default: console.log(`Unknown status ${watchedState.status}`);        
+      // default: console.log(`Unknown status ${watchedState.status}`); 
+      default: console.log(``);               
     }
 
     // if (watchedState.status === 'updated') {

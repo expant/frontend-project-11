@@ -10,3 +10,10 @@
   color: #6c757d;
 }
 
+.modal {
+  display: none;
+}
+
+.modal.show {
+  display: block;
+}

@@ -32,9 +32,18 @@ const getElements = () => ({
       form: document.querySelector('.rss-form'),
       field: document.querySelector('#url-input'),
       label: document.querySelector('.form-label'),
-      button: document.querySelector('.btn'),
+      button: document.querySelector('.rss-form .btn'),
     },
     example: document.querySelector('.example-muted'),
+    modal: {
+      readCompletely: document.querySelector('.modal-footer .btn-primary'),
+      close: document.querySelector('.modal-footer .btn-secondary'),
+    },
+  },
+  modal: {
+    title: document.querySelector('.modal-title'),
+    description: document.querySelector('.modal-body'),
+    readCompletely: document.querySelector('.modal-footer .btn-primary'),
   },
   feedback: document.querySelector('.feedback'),
   posts: {
@@ -46,7 +55,7 @@ const getElements = () => ({
     parent: document.querySelector('.feeds'),
     title: document.querySelector('.feeds h2'),
     list: document.querySelector('.feeds ul'),
-  }
+  },
 });
 
 const setIdOfTheUpdatedData = (data, state, feedId) => {
@@ -101,7 +110,7 @@ export default () => {
       posts: [],
     },
     uiState: {
-      posts: [],
+      readPosts: [],
     }
   };
 
@@ -152,12 +161,11 @@ export default () => {
     watchedState.status = 'updated';
   }
 
-  const updatePosts = () => watchedState.urls
-    .forEach((urlObj) => {
-      makeRequest(urlObj.url)
-        .then((res) => handleResponse(res, urlObj))
-        .catch(() => handleError('networkError', 'feedbacks.networkError'));
-    }); 
+  const updatePosts = () => watchedState.urls.forEach((urlObj) => {
+    makeRequest(urlObj.url)
+      .then((res) => handleResponse(res, urlObj))
+      .catch(() => handleError('networkError', 'feedbacks.networkError'));
+  }); 
 
   const watchPosts = () => {
     if (watchedState.urls.length === 0) {
@@ -214,27 +222,31 @@ export default () => {
         watchedState.urls.push({ url, contentLength, feedId: feed.id });
         watchedState.lists.feeds = [feed, ...watchedState.lists.feeds];
         watchedState.lists.posts = [...posts, ...watchedState.lists.posts];
-        watchedState.uiState.posts = [
-          ...watchedState.uiState.posts, 
-          ...posts.map((post) => ({ id: post.id, viewed: false })),
-        ];
         watchedState.status = 'finished';
       })
-      .catch(() => handleError('unknownError', 'feedbacks.unknownError'));  
+      .catch(() => handleError('unknownError', 'feedbacks.unknownError'))
+
+      .then(() => {
+        const { list } = elements.posts;
+        if (list.childNodes.length === 0) {
+          return;
+        }
+      
+        const postViewBtns = list.querySelectorAll('li > button');
+        postViewBtns.forEach((postViewBtn) => {
+          postViewBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const postId = parseInt(e.target.dataset.id);
+            const post = watchedState.lists.posts.find((post) => post.id === postId);
+
+            console.log(post);
+            const otherPosts = watchedState.uiState.readPosts.filter((post) => post.id !== postId);
+            watchedState.uiState.readPosts = [...otherPosts, post];
+          });
+        });
+      })
   });
 
-  // const { list } = elements.posts;
-  // if (list.childNodes.length === 0) {
-  //   return;
-  // }
-
-  // const postViewBtns = list.querySelectorAll('li > button');
-  // postViewBtns.forEach((postViewBtn) => {
-  //   postViewBtn.addEventListener('click', (e) => {
-  //     e.preventDefault();
-  //     console.log(e.target);
-  //   });
-  // });
 };
 
 
@@ -243,8 +255,8 @@ export default () => {
 
 // ---------- Проблемы и задачи ------------------------------------------------------
 
-// 1. Ошибки связанные с отображением модального окна
-//    ( Cannot read properties of undefined (reading 'backdrop') )
+// 1. Вставлять title и description из состояния
+
 
 
 
@@ -256,6 +268,9 @@ export default () => {
 
 // UnknownError:
 // http://itunes.apple.com/us/rss/toptvseasons/limit=100/genre=4000/xml?at=1001l5Uo
+
+// invalidRSS:
+// https://myfin.by/rss
 
 // Updates:
 // https://lorem-rss.hexlet.app/feed?unit=second&interval=10

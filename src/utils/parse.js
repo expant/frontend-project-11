@@ -27,7 +27,7 @@ export default (string) => {
     const title = titleElement.textContent;
     const description = descriptionElement.textContent;
     const link = linkElement.textContent;
-    return { title, description, link };
+    return { title, description, link, read: false };
   });
   return { feed, posts };
 };

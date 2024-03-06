@@ -6,6 +6,10 @@ export default {
       label: 'Cсылка RSS',
       button: 'Добавить',
     },
+    modal: {
+      readCompletely: 'Читать полностью',
+      close: 'Закрыть',
+    },
     example: 'Пример: https://lorem-rss.hexlet.app/feed',
     feedbacks: {
       success: 'RSS успешно загружен',
