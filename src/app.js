@@ -1,7 +1,7 @@
 import i18next from 'i18next';
 import * as yup from 'yup';
 import axios from 'axios';
-import { isEmpty, sortBy } from 'lodash';
+import { isEmpty } from 'lodash';
 import watch from './view.js';
 import resources from './locales/index.js';
 import parse from './utils/parse.js';
@@ -59,19 +59,19 @@ const getElements = () => ({
 });
 
 const setIdOfTheUpdatedData = (data, state, feedId) => {
-  const { posts } = {...data};
-  const { posts: postsFromState } = {...state.lists};
-  const lastPost = postsFromState[postsFromState.length - 1];
-  const postsWithId = posts.map((post, i) => ({ 
-    ...post, 
-    id: lastPost.id + (i + 1), 
+  const { post } = { ...data };
+  const { posts: postsFromState } = { ...state.lists };
+  const lastPost = postsFromState[0];
+  console.log(post);
+  return {
+    ...post,
+    id: lastPost.id + 1,
     feedId,
-  }));
-  return { posts: postsWithId };
+  };
 };
 
 const setId = (data, state) => {
-  const { feed, posts } = {...data};
+  const { feed, posts } = { ...data };
   if (isEmpty(state.lists.feeds) && isEmpty(state.lists.posts)) {
     const feedWithId = { ...feed, id: 0 };
     const postsWithId = posts.map((post, i) => ({
@@ -82,17 +82,18 @@ const setId = (data, state) => {
     return { feed: feedWithId, posts: postsWithId };
   }
 
-  const { 
-    feeds: feedsFromState, 
-    posts: postsFromState, 
-  } = {...state.lists};
+  const {
+    feeds: feedsFromState,
+    posts: postsFromState,
+  } = { ...state.lists };
 
   const lastFeed = feedsFromState[feedsFromState.length - 1];
-  const lastPost = postsFromState[postsFromState.length - 1];
+  // const lastPost = postsFromState[postsFromState.length - 1];
+  const lastPost = postsFromState[0];
   const feedWithId = { ...feed, id: lastFeed.id + 1 };
-  const postsWithId = posts.map((post, i) => ({ 
+  const postsWithId = posts.map((post, i) => ({
     ...post,
-    id: lastPost.id + (i + 1), 
+    id: lastPost.id + (i + 1),
     feedId: feedWithId.id,
   }));
   return { feed: feedWithId, posts: postsWithId };
@@ -111,7 +112,7 @@ export default () => {
     },
     uiState: {
       readPosts: [],
-    }
+    },
   };
 
   const i18n = i18next.createInstance();
@@ -138,34 +139,43 @@ export default () => {
     }
 
     const parsedData = parse(res.data.contents);
-    const newPosts = parsedData.posts.filter((post) => {
+    const newPost = parsedData.posts.find((post) => {
       const currentPost = watchedState.lists.posts.find(
         (postFromState) => postFromState.title === post.title,
       );
-      return currentPost ? false : true;
+      return !currentPost;
     });
 
-    const data = {
-      feed: parsedData.feed,
-      posts: newPosts,
-    };
-    const { posts } = setIdOfTheUpdatedData(data, watchedState, feedId);
+    const data = { feed: parsedData.feed, post: newPost };
+    const post = setIdOfTheUpdatedData(data, watchedState, feedId);
     const otherUrls = watchedState.urls.filter((url) => url.feedId !== feedId);
     const newUrl = { url, contentLength: newContentLength, feedId };
+
     watchedState.urls = [...otherUrls, newUrl];
-    watchedState.lists.posts = [...posts, ...watchedState.lists.posts];
-    // watchedState.uiState.posts = [
-    //   ...watchedState.uiState.posts, 
-    //   ...posts.map((post) => ({ id: post.id, viewed: false })),
-    // ];
+    watchedState.lists.posts = [post, ...watchedState.lists.posts];
     watchedState.status = 'updated';
-  }
+  };
+
+  const handleModal = () => {
+    const { list } = elements.posts;
+    const postViewBtns = list.querySelectorAll('li > button');
+    postViewBtns.forEach((postViewBtn) => {
+      postViewBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const postId = parseInt(e.target.dataset.id);
+        const post = watchedState.lists.posts.find((post) => post.id === postId);
+        const otherPosts = watchedState.uiState.readPosts.filter((post) => post.id !== postId);
+        watchedState.uiState.readPosts = [...otherPosts, post];
+      });
+    });
+  };
 
   const updatePosts = () => watchedState.urls.forEach((urlObj) => {
     makeRequest(urlObj.url)
       .then((res) => handleResponse(res, urlObj))
-      .catch(() => handleError('networkError', 'feedbacks.networkError'));
-  }); 
+      .catch(() => handleError('networkError', 'feedbacks.networkError'))
+      .then(() => handleModal());
+  });
 
   const watchPosts = () => {
     if (watchedState.urls.length === 0) {
@@ -192,7 +202,7 @@ export default () => {
           watchedState.status = 'invalid';
           return;
         }
-        
+
         watchedState.error = {};
         watchedState.status = 'valid';
         return makeRequest(url);
@@ -221,49 +231,24 @@ export default () => {
         const { content_length: contentLength } = res.data.status;
         watchedState.urls.push({ url, contentLength, feedId: feed.id });
         watchedState.lists.feeds = [feed, ...watchedState.lists.feeds];
-        watchedState.lists.posts = [...posts, ...watchedState.lists.posts];
+        watchedState.lists.posts = [...posts.reverse(), ...watchedState.lists.posts];
         watchedState.status = 'finished';
       })
       .catch(() => handleError('unknownError', 'feedbacks.unknownError'))
-
+      // handle modal
       .then(() => {
         const { list } = elements.posts;
         if (list.childNodes.length === 0) {
           return;
         }
-      
-        const postViewBtns = list.querySelectorAll('li > button');
-        postViewBtns.forEach((postViewBtn) => {
-          postViewBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const postId = parseInt(e.target.dataset.id);
-            const post = watchedState.lists.posts.find((post) => post.id === postId);
-
-            console.log(post);
-            const otherPosts = watchedState.uiState.readPosts.filter((post) => post.id !== postId);
-            watchedState.uiState.readPosts = [...otherPosts, post];
-          });
-        });
-      })
+        handleModal();
+      });
   });
-
 };
-
-
-
-
-
-// ---------- Проблемы и задачи ------------------------------------------------------
-
-// 1. Вставлять title и description из состояния
-
-
-
-
 
 // --------- URL-адреса для тестирования различных вариантов: (ошибки и тд) ----------------------------
 
-// NetworkError: 
+// NetworkError:
 // http://www.mk.ru/rss/politics/index.xml
 
 // UnknownError:
@@ -274,4 +259,3 @@ export default () => {
 
 // Updates:
 // https://lorem-rss.hexlet.app/feed?unit=second&interval=10
-      

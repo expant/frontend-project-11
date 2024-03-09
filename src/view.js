@@ -41,23 +41,29 @@ const renderFeed = (feedsListElement, feed) => {
   feedsListElement.prepend(feedElement);
 };
 
-const renderPosts = (postsListElement, postsState) => {
+const renderPosts = (postsListElement, postsState, stateOfReadPosts) => {
   postsListElement.innerHTML = '';
   postsState.forEach((post) => {
     const { id, title, link } = post;
     const postElement = document.createElement('li');
     const titleElement = document.createElement('a');
     const button = document.createElement('button');
+    const readPost = stateOfReadPosts.find((readPost) => readPost.id === id);
 
     postElement.classList.add(
-      'list-group-item', 
-      'd-flex', 
-      'justify-content-between', 
-      'align-items-start', 
-      'border-0', 
-      'border-end-0'
+      'list-group-item',
+      'd-flex',
+      'justify-content-between',
+      'align-items-start',
+      'border-0',
+      'border-end-0',
     );
-    titleElement.classList.add('fw-bold');
+
+    if (readPost) {
+      titleElement.classList.add('fw-normal');
+    } else {
+      titleElement.classList.add('fw-bold');
+    }
     button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
     titleElement.setAttribute('href', link);
     titleElement.setAttribute('data-id', id);
@@ -72,7 +78,7 @@ const renderPosts = (postsListElement, postsState) => {
     postElement.append(button);
     postsListElement.append(postElement);
   });
-}
+};
 
 const renderRSS = (elements, t, state) => {
   const { posts, feeds } = elements;
@@ -92,7 +98,7 @@ export default (elements, i18n, initialState) => {
   const { field, button } = elements.init.rssForm;
   renderText(elements.init, t);
 
-  const watchedState = onChange(initialState, (path, value) => {  
+  const watchedState = onChange(initialState, (path, value) => {
     switch (path) {
       case 'error': {
         renderError(elements, t, value);
@@ -102,7 +108,11 @@ export default (elements, i18n, initialState) => {
         const { posts } = elements;
         posts.title.textContent = t('posts');
         const postsListElement = posts.list;
-        renderPosts(postsListElement, watchedState.lists.posts);
+        renderPosts(
+          postsListElement,
+          watchedState.lists.posts,
+          watchedState.uiState.readPosts,
+        );
         break;
       }
       case 'lists.feeds': {
@@ -114,23 +124,34 @@ export default (elements, i18n, initialState) => {
         return;
       }
       case 'uiState.readPosts': {
-        const { 
-          title: modalElTitle, 
+        const {
+          title: modalElTitle,
           description: modalElDesc,
           readCompletely,
         } = elements.modal;
-
-        console.log(watchedState.uiState.readPosts);
+        const { list } = elements.posts;
+        const postElements = Array.from(list.querySelectorAll('li'));
         const post = watchedState.uiState.readPosts[
           watchedState.uiState.readPosts.length - 1
         ];
-        const { title, description, link } = post;
+        const {
+          title, description, link, id,
+        } = post;
+        const readPostElement = postElements.find((postEl) => {
+          const btnEl = postEl.querySelector('button');
+          return parseInt(btnEl.dataset.id) === id;
+        });
+        const linkEl = readPostElement.querySelector('a');
+
+        linkEl.classList.remove('fw-bold');
+        linkEl.classList.add('fw-normal');
         modalElTitle.textContent = title;
         modalElDesc.textContent = description;
         readCompletely.setAttribute('href', link);
       }
-      // default: console.log(`Unknown path ${path}: ${value}`);  
-      default: console.log(``);      
+
+      // default: console.log(`Unknown path ${path}: ${value}`);
+      default: console.log('');
     }
 
     switch (watchedState.status) {
@@ -154,11 +175,11 @@ export default (elements, i18n, initialState) => {
       }
       case 'invalid': {
         field.removeAttribute('readonly');
-        button.removeAttribute('disabled'); 
+        button.removeAttribute('disabled');
         return;
       }
-      // default: console.log(`Unknown status ${watchedState.status}`); 
-      default: console.log(``);               
+      // default: console.log(`Unknown status ${watchedState.status}`);
+      default: console.log('');
     }
 
     // if (watchedState.status === 'updated') {
@@ -169,4 +190,3 @@ export default (elements, i18n, initialState) => {
 
   return watchedState;
 };
-
