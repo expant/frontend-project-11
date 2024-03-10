@@ -41,14 +41,14 @@ const renderFeed = (feedsListElement, feed) => {
   feedsListElement.prepend(feedElement);
 };
 
-const renderPosts = (postsListElement, postsState, stateOfReadPosts) => {
+const renderPosts = (postsListElement, postsState, readPosts) => {
   postsListElement.innerHTML = '';
   postsState.forEach((post) => {
     const { id, title, link } = post;
     const postElement = document.createElement('li');
     const titleElement = document.createElement('a');
     const button = document.createElement('button');
-    const readPost = stateOfReadPosts.find((readPost) => readPost.id === id);
+    const currentReadPost = readPosts.find((readPost) => readPost.id === id);
 
     postElement.classList.add(
       'list-group-item',
@@ -59,7 +59,7 @@ const renderPosts = (postsListElement, postsState, stateOfReadPosts) => {
       'border-end-0',
     );
 
-    if (readPost) {
+    if (currentReadPost) {
       titleElement.classList.add('fw-normal', 'link-secondary');
     } else {
       titleElement.classList.add('fw-bold');
@@ -156,7 +156,7 @@ const checkPath = (onChangeParams, elements, t, watchedState) => {
       } = post;
       const readPostElement = postElements.find((postEl) => {
         const btnEl = postEl.querySelector('button');
-        return parseInt(btnEl.dataset.id) === id;
+        return parseInt(btnEl.dataset.id, 10) === id;
       });
       const linkEl = readPostElement.querySelector('a');
 
@@ -171,7 +171,6 @@ const checkPath = (onChangeParams, elements, t, watchedState) => {
     // default: console.log(`Unknown path ${path}: ${value}`);
     default: console.log('');
   }
-
 };
 
 export default (elements, i18n, initialState) => {

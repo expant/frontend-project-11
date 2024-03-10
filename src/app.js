@@ -148,7 +148,7 @@ export default () => {
 
     const data = { feed: parsedData.feed, post: newPost };
     const post = setIdOfTheUpdatedData(data, watchedState, feedId);
-    const otherUrls = watchedState.urls.filter((url) => url.feedId !== feedId);
+    const otherUrls = watchedState.urls.filter((urlItem) => urlItem.feedId !== feedId);
     const newUrl = { url, contentLength: newContentLength, feedId };
 
     watchedState.urls = [...otherUrls, newUrl];
@@ -163,10 +163,10 @@ export default () => {
       if (!event.target.dataset.id) {
         return;
       }
-      const postId = parseInt(event.target.dataset.id);
-      const post = watchedState.lists.posts.find((post) => post.id === postId);
+      const postId = parseInt(event.target.dataset.id, 10);
+      const currentPost = watchedState.lists.posts.find((post) => post.id === postId);
       const otherPosts = watchedState.uiState.readPosts.filter((post) => post.id !== postId);
-      watchedState.uiState.readPosts = [...otherPosts, post];
+      watchedState.uiState.readPosts = [...otherPosts, currentPost];
     };
 
     readPostsElements.forEach((readPostEl) => {
@@ -209,7 +209,8 @@ export default () => {
 
         watchedState.error = {};
         watchedState.status = 'valid';
-        return makeRequest(url);
+        const res = makeRequest(url);
+        return res;
       })
       .catch((err) => {
         if (err.name && err.name === 'AxiosError') {
@@ -251,7 +252,7 @@ export default () => {
   });
 };
 
-// --------- URL-адреса для тестирования различных вариантов: (ошибки и тд) ----------------------------
+// --------- URL-адреса для тестирования различных вариантов: (ошибки и тд)
 
 // NetworkError:
 // http://www.mk.ru/rss/politics/index.xml
