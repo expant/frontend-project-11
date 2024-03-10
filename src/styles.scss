@@ -1,19 +1,5 @@
 @import "~bootstrap/scss/bootstrap";
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
 .example-muted {
   color: #6c757d;
-}
-
-.modal {
-  display: none;
-}
-
-.modal.show {
-  display: block;
 }

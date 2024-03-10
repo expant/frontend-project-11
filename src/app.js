@@ -158,15 +158,19 @@ export default () => {
 
   const handleModal = () => {
     const { list } = elements.posts;
-    const postViewBtns = list.querySelectorAll('li > button');
-    postViewBtns.forEach((postViewBtn) => {
-      postViewBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        const postId = parseInt(e.target.dataset.id);
-        const post = watchedState.lists.posts.find((post) => post.id === postId);
-        const otherPosts = watchedState.uiState.readPosts.filter((post) => post.id !== postId);
-        watchedState.uiState.readPosts = [...otherPosts, post];
-      });
+    const readPostsElements = list.querySelectorAll('li');
+    const updateStateOfReadPosts = (event) => {
+      if (!event.target.dataset.id) {
+        return;
+      }
+      const postId = parseInt(event.target.dataset.id);
+      const post = watchedState.lists.posts.find((post) => post.id === postId);
+      const otherPosts = watchedState.uiState.readPosts.filter((post) => post.id !== postId);
+      watchedState.uiState.readPosts = [...otherPosts, post];
+    };
+
+    readPostsElements.forEach((readPostEl) => {
+      readPostEl.addEventListener('click', (e) => updateStateOfReadPosts(e));
     });
   };
 
@@ -233,6 +237,7 @@ export default () => {
         watchedState.lists.feeds = [feed, ...watchedState.lists.feeds];
         watchedState.lists.posts = [...posts.reverse(), ...watchedState.lists.posts];
         watchedState.status = 'finished';
+        console.log(watchedState.status);
       })
       .catch(() => handleError('unknownError', 'feedbacks.unknownError'))
       // handle modal

@@ -144,10 +144,11 @@ export default (elements, i18n, initialState) => {
         const linkEl = readPostElement.querySelector('a');
 
         linkEl.classList.remove('fw-bold');
-        linkEl.classList.add('fw-normal');
+        linkEl.classList.add('fw-normal', 'link-secondary');
         modalElTitle.textContent = title;
         modalElDesc.textContent = description;
         readCompletely.setAttribute('href', link);
+        return;
       }
 
       // default: console.log(`Unknown path ${path}: ${value}`);
@@ -169,6 +170,7 @@ export default (elements, i18n, initialState) => {
         field.removeAttribute('readonly');
         button.removeAttribute('disabled');
         field.classList.remove('is-invalid');
+        console.log('Hello world');
         field.focus();
         field.value = '';
         break;
