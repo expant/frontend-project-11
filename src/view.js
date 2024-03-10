@@ -1,7 +1,7 @@
 import onChange from 'on-change';
 import { isEmpty } from 'lodash';
 
-const renderText = (elements, t) => {
+const renderInitText = (elements, t) => {
   elements.title.textContent = t('title');
   elements.subtitle.textContent = t('subtitle');
   elements.rssForm.label.textContent = t('rssForm.label');
@@ -60,7 +60,7 @@ const renderPosts = (postsListElement, postsState, stateOfReadPosts) => {
     );
 
     if (readPost) {
-      titleElement.classList.add('fw-normal');
+      titleElement.classList.add('fw-normal', 'link-secondary');
     } else {
       titleElement.classList.add('fw-bold');
     }
@@ -80,115 +80,107 @@ const renderPosts = (postsListElement, postsState, stateOfReadPosts) => {
   });
 };
 
-const renderRSS = (elements, t, state) => {
-  const { posts, feeds } = elements;
+const checkStatus = (status, elements, t) => {
+  const { feedback } = elements;
+  const { field, button } = elements.init.rssForm;
 
-  posts.title.textContent = t('posts');
-  feeds.title.textContent = t('feeds');
-  const postsListElement = posts.list;
-  const feedsListElement = feeds.list;
-  const firstFeed = state.feeds[state.feeds.length - 1];
-  renderFeed(feedsListElement, firstFeed);
-  renderPosts(postsListElement, state.posts);
+  switch (status) {
+    case 'sending': {
+      field.classList.remove('is-invalid');
+      feedback.classList.remove('text-danger');
+      button.setAttribute('disabled', '');
+      field.setAttribute('readonly', '');
+      feedback.textContent = '';
+      break;
+    }
+    case 'finished': {
+      feedback.textContent = t('feedbacks.success');
+      feedback.classList.add('text-success');
+      field.removeAttribute('readonly');
+      button.removeAttribute('disabled');
+      field.classList.remove('is-invalid');
+      field.focus();
+      field.value = '';
+      break;
+    }
+    case 'invalid': {
+      field.removeAttribute('readonly');
+      button.removeAttribute('disabled');
+      return;
+    }
+    // default: console.log(`Unknown status ${watchedState.status}`);
+    default: console.log('');
+  }
+};
+
+const checkPath = (onChangeParams, elements, t, watchedState) => {
+  const { path, value } = onChangeParams;
+
+  switch (path) {
+    case 'error': {
+      renderError(elements, t, value);
+      return;
+    }
+    case 'lists.posts': {
+      const { posts } = elements;
+      posts.title.textContent = t('posts');
+      const postsListElement = posts.list;
+      renderPosts(
+        postsListElement,
+        watchedState.lists.posts,
+        watchedState.uiState.readPosts,
+      );
+      break;
+    }
+    case 'lists.feeds': {
+      const { feeds } = elements;
+      feeds.title.textContent = t('feeds');
+      const feedsListElement = feeds.list;
+      const firstFeed = watchedState.lists.feeds[0];
+      renderFeed(feedsListElement, firstFeed);
+      return;
+    }
+    case 'uiState.readPosts': {
+      const {
+        title: modalElTitle,
+        description: modalElDesc,
+        readCompletely,
+      } = elements.modal;
+      const { list } = elements.posts;
+      const postElements = Array.from(list.querySelectorAll('li'));
+      const post = watchedState.uiState.readPosts[
+        watchedState.uiState.readPosts.length - 1
+      ];
+      const {
+        title, description, link, id,
+      } = post;
+      const readPostElement = postElements.find((postEl) => {
+        const btnEl = postEl.querySelector('button');
+        return parseInt(btnEl.dataset.id) === id;
+      });
+      const linkEl = readPostElement.querySelector('a');
+
+      linkEl.classList.remove('fw-bold');
+      linkEl.classList.add('fw-normal', 'link-secondary');
+      modalElTitle.textContent = title;
+      modalElDesc.textContent = description;
+      readCompletely.setAttribute('href', link);
+      return;
+    }
+
+    // default: console.log(`Unknown path ${path}: ${value}`);
+    default: console.log('');
+  }
+
 };
 
 export default (elements, i18n, initialState) => {
   const { t } = i18n;
-  const { feedback } = elements;
-  const { field, button } = elements.init.rssForm;
-  renderText(elements.init, t);
+  renderInitText(elements.init, t);
 
   const watchedState = onChange(initialState, (path, value) => {
-    switch (path) {
-      case 'error': {
-        renderError(elements, t, value);
-        return;
-      }
-      case 'lists.posts': {
-        const { posts } = elements;
-        posts.title.textContent = t('posts');
-        const postsListElement = posts.list;
-        renderPosts(
-          postsListElement,
-          watchedState.lists.posts,
-          watchedState.uiState.readPosts,
-        );
-        break;
-      }
-      case 'lists.feeds': {
-        const { feeds } = elements;
-        feeds.title.textContent = t('feeds');
-        const feedsListElement = feeds.list;
-        const firstFeed = watchedState.lists.feeds[0];
-        renderFeed(feedsListElement, firstFeed);
-        return;
-      }
-      case 'uiState.readPosts': {
-        const {
-          title: modalElTitle,
-          description: modalElDesc,
-          readCompletely,
-        } = elements.modal;
-        const { list } = elements.posts;
-        const postElements = Array.from(list.querySelectorAll('li'));
-        const post = watchedState.uiState.readPosts[
-          watchedState.uiState.readPosts.length - 1
-        ];
-        const {
-          title, description, link, id,
-        } = post;
-        const readPostElement = postElements.find((postEl) => {
-          const btnEl = postEl.querySelector('button');
-          return parseInt(btnEl.dataset.id) === id;
-        });
-        const linkEl = readPostElement.querySelector('a');
-
-        linkEl.classList.remove('fw-bold');
-        linkEl.classList.add('fw-normal', 'link-secondary');
-        modalElTitle.textContent = title;
-        modalElDesc.textContent = description;
-        readCompletely.setAttribute('href', link);
-        return;
-      }
-
-      // default: console.log(`Unknown path ${path}: ${value}`);
-      default: console.log('');
-    }
-
-    switch (watchedState.status) {
-      case 'sending': {
-        field.classList.remove('is-invalid');
-        feedback.classList.remove('text-danger');
-        button.setAttribute('disabled', '');
-        field.setAttribute('readonly', '');
-        feedback.textContent = '';
-        break;
-      }
-      case 'finished': {
-        feedback.textContent = t('feedbacks.success');
-        feedback.classList.add('text-success');
-        field.removeAttribute('readonly');
-        button.removeAttribute('disabled');
-        field.classList.remove('is-invalid');
-        console.log('Hello world');
-        field.focus();
-        field.value = '';
-        break;
-      }
-      case 'invalid': {
-        field.removeAttribute('readonly');
-        button.removeAttribute('disabled');
-        return;
-      }
-      // default: console.log(`Unknown status ${watchedState.status}`);
-      default: console.log('');
-    }
-
-    // if (watchedState.status === 'updated') {
-    //   console.log(watchedState.status);
-    //   return;
-    // }
+    checkPath({ path, value }, elements, t, watchedState);
+    checkStatus(watchedState.status, elements, t);
   });
-
   return watchedState;
 };
