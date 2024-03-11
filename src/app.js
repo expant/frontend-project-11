@@ -102,17 +102,33 @@ const setId = (data, state) => {
 export default () => {
   const elements = getElements();
   // Model
+  // const initialState = {
+  //   status: 'filling',
+  //   urls: [],
+  //   error: {},
+  //   lists: {
+  //     feeds: [],
+  //     posts: [],
+  //   },
+  //   uiState: {
+  //     readPosts: [],
+  //   },
+  // };
+
   const initialState = {
-    status: 'filling',
-    urls: [],
-    error: {},
-    lists: {
-      feeds: [],
-      posts: [],
+    rssForm: {
+      UrlSubmissionProcces: {
+        error: {},
+        state: 'filling',
+        validationState: false,
+      },
+      urlField: '',
     },
+    feeds: [],
+    posts: [],
     uiState: {
-      readPosts: [],
-    },
+      modal: [],
+    }
   };
 
   const i18n = i18next.createInstance();
