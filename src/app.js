@@ -62,7 +62,7 @@ const setIdOfTheUpdatedData = (data, state, feedId) => {
   const { post } = { ...data };
   const { posts: postsFromState } = { ...state.lists };
   const lastPost = postsFromState[0];
-  console.log(post);
+  // console.log(post);
   return {
     ...post,
     id: lastPost.id + 1,
@@ -143,10 +143,12 @@ export default () => {
       const currentPost = watchedState.lists.posts.find(
         (postFromState) => postFromState.title === post.title,
       );
+
       return !currentPost;
     });
 
     const data = { feed: parsedData.feed, post: newPost };
+
     const post = setIdOfTheUpdatedData(data, watchedState, feedId);
     const otherUrls = watchedState.urls.filter((urlItem) => urlItem.feedId !== feedId);
     const newUrl = { url, contentLength: newContentLength, feedId };
@@ -239,7 +241,6 @@ export default () => {
         watchedState.status = 'finished';
       })
       .catch(() => handleError('unknownError', 'feedbacks.unknownError'))
-      // handle modal
       .then(() => {
         const { list } = elements.posts;
         if (list.childNodes.length === 0) {

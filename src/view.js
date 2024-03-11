@@ -46,7 +46,9 @@ const renderFeed = (elements, t, watchedState) => {
 };
 
 const renderPosts = (args) => {
-  const { elements, t, postsState, readPostsState} = args;
+  const {
+    elements, t, postsState, readPostsState,
+  } = args;
   const { posts } = elements;
   posts.title.textContent = t('posts');
   const postsListElement = posts.list;
@@ -100,7 +102,9 @@ const handleReadPosts = (elements, watchedState) => {
   const post = watchedState.uiState.readPosts[
     watchedState.uiState.readPosts.length - 1
   ];
-  const { title, description, link, id } = post;
+  const {
+    title, description, link, id,
+  } = post;
   const readPostElement = postElements.find((postEl) => {
     const btnEl = postEl.querySelector('button');
     return parseInt(btnEl.dataset.id, 10) === id;
@@ -112,7 +116,7 @@ const handleReadPosts = (elements, watchedState) => {
   modalElTitle.textContent = title;
   modalElDesc.textContent = description;
   readCompletely.setAttribute('href', link);
-}
+};
 
 const handleSendingStatus = (feedback, field, button) => {
   field.classList.remove('is-invalid');
@@ -164,9 +168,10 @@ export default (elements, i18n, initialState) => {
         handleReadPosts(elements, watchedState);
         return;
       }
-      default: console.log(`Unknown path ${path}: ${value}`);
+      // default: console.log(`Unknown path ${path}: ${value}`);
+      default: console.log('');
     }
-    
+
     const { feedback } = elements;
     const { field, button } = elements.init.rssForm;
     switch (watchedState.status) {
@@ -182,7 +187,8 @@ export default (elements, i18n, initialState) => {
         handleInvalidStatus(field, button);
         return;
       }
-      default: console.log(`Unknown status ${watchedState.status}`);
+      // default: console.log(`Unknown status ${watchedState.status}`);
+      default: console.log('');
     }
   });
   return watchedState;
