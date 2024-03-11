@@ -177,8 +177,8 @@ export default () => {
   const updatePosts = () => watchedState.urls.forEach((urlObj) => {
     makeRequest(urlObj.url)
       .then((res) => handleResponse(res, urlObj))
-      .catch(() => handleError('networkError', 'feedbacks.networkError'))
-      .then(() => handleModal());
+      .then(() => handleModal())
+      .catch(() => handleError('networkError', 'feedbacks.networkError'));
   });
 
   const watchPosts = () => {
@@ -209,8 +209,7 @@ export default () => {
 
         watchedState.error = {};
         watchedState.status = 'valid';
-        const res = makeRequest(url);
-        return res;
+        return makeRequest(url);
       })
       .catch((err) => {
         if (err.name && err.name === 'AxiosError') {
@@ -238,7 +237,6 @@ export default () => {
         watchedState.lists.feeds = [feed, ...watchedState.lists.feeds];
         watchedState.lists.posts = [...posts.reverse(), ...watchedState.lists.posts];
         watchedState.status = 'finished';
-        console.log(watchedState.status);
       })
       .catch(() => handleError('unknownError', 'feedbacks.unknownError'))
       // handle modal
