@@ -1,62 +1,15 @@
-import i18next from 'i18next';
-import * as yup from 'yup';
 import axios from 'axios';
 import { isEmpty } from 'lodash';
 import watch from './view.js';
-import resources from './locales/index.js';
 import parse from './utils/parse.js';
 
 const UPDATE_INTERVAL = 5000;
 const TIMEOUT = 10000;
 
-yup.setLocale({
-  string: {
-    url: 'feedbacks.invalid',
-  },
-});
-
-const schema = yup.object({
-  url: yup.string().required().url(),
-});
-
 const makeRequest = (url) => axios.get(
   `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`,
   { timeout: TIMEOUT },
 );
-
-const getElements = () => ({
-  init: {
-    title: document.querySelector('h1'),
-    subtitle: document.querySelector('p.lead'),
-    rssForm: {
-      form: document.querySelector('.rss-form'),
-      field: document.querySelector('#url-input'),
-      label: document.querySelector('.form-label'),
-      button: document.querySelector('.rss-form .btn'),
-    },
-    example: document.querySelector('.example-muted'),
-    modal: {
-      readCompletely: document.querySelector('.modal-footer .btn-primary'),
-      close: document.querySelector('.modal-footer .btn-secondary'),
-    },
-  },
-  modal: {
-    title: document.querySelector('.modal-title'),
-    description: document.querySelector('.modal-body'),
-    readCompletely: document.querySelector('.modal-footer .btn-primary'),
-  },
-  feedback: document.querySelector('.feedback'),
-  posts: {
-    parent: document.querySelector('.posts'),
-    title: document.querySelector('.posts h2'),
-    list: document.querySelector('.posts ul'),
-  },
-  feeds: {
-    parent: document.querySelector('.feeds'),
-    title: document.querySelector('.feeds h2'),
-    list: document.querySelector('.feeds ul'),
-  },
-});
 
 const setIdOfTheUpdatedData = (data, state, feedId) => {
   const { post } = { ...data };
@@ -99,45 +52,7 @@ const setId = (data, state) => {
   return { feed: feedWithId, posts: postsWithId };
 };
 
-export default () => {
-  const elements = getElements();
-  // Model
-  // const initialState = {
-  //   status: 'filling',
-  //   urls: [],
-  //   error: {},
-  //   lists: {
-  //     feeds: [],
-  //     posts: [],
-  //   },
-  //   uiState: {
-  //     readPosts: [],
-  //   },
-  // };
-
-  const initialState = {
-    rssForm: {
-      UrlSubmissionProcces: {
-        error: {},
-        state: 'filling',
-        validationState: false,
-      },
-      urlField: '',
-    },
-    feeds: [],
-    posts: [],
-    uiState: {
-      modal: [],
-    }
-  };
-
-  const i18n = i18next.createInstance();
-  i18n.init({
-    lng: 'ru',
-    debug: false,
-    resources,
-  });
-
+export default (elements, i18n, initialState) => {
   // View
   const watchedState = watch(elements, i18n, initialState);
 
@@ -213,8 +128,9 @@ export default () => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const url = formData.get('url');
-    watchedState.status = 'sending';
-
+    
+    
+    // watchedState.status = 'sending';
     schema.validate({ url }, { abortEarly: false })
       // sending a request
       .then(() => {
