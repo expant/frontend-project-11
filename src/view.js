@@ -153,6 +153,18 @@ const renderError = (elements, t, error) => {
   feedback.textContent = t(error);
 };
 
+const renderValid = (elements) => {
+  const { feedback } = elements;
+  const { field } = elements.init.rssForm;
+
+  if (feedback.classList.contains('text-danger')) {
+    feedback.classList.remove('text-danger');
+  }
+  field.classList.remove('is-invalid');    
+  feedback.classList.add('text-success');
+  feedback.textContent = ''; 
+}
+
 export default (elements, i18n, initialState) => {
   const { t } = i18n;
   renderInitText(elements.init, t);
@@ -160,13 +172,15 @@ export default (elements, i18n, initialState) => {
   const watchedState = onChange(initialState, (path, value) => {
     if (path === 'rssForm') {
       if (value.isValid) {
-        console.log('Круто');
+        renderValid(elements);
       } 
 
       if (!value.isValid) {
         renderError(elements, t, value.error);
       }
     }
+
+    
   });
   return watchedState;
 };

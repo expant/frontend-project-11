@@ -99,6 +99,14 @@ const getElements = () => ({
   },
 });
 
+const isUrlExist = (watchedState, url) => {
+  const existUrl = watchedState.feeds.find((feed) => feed.url === url);
+  if (existUrl) {
+    return true;
+  }
+  return false;
+};
+
 const validateForm = (url, watchedState, schema) => {
   schema.validate({ url }, { abortEarly: false })
     .then(() => {
@@ -115,7 +123,21 @@ const validateForm = (url, watchedState, schema) => {
         isValid: false,
       };
     });
-}
+  
+  
+};
+
+const loadRSS = (watchedState, url) => {
+  axios.get(
+    `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`,
+    { timeout: TIMEOUT },
+  )
+  .then((res) => {
+    console.log(res);
+    console.log('Норм, можно парсить!');
+  })
+  .catch((err) => console.log(err));
+}; 
 
 const handleRSSForm = (elements, watchedState, schema) => {
   const { form } = elements.init.rssForm;
@@ -123,12 +145,22 @@ const handleRSSForm = (elements, watchedState, schema) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const url = formData.get('url');
+
+    if (isUrlExist(watchedState, url)) {
+      watchedState.rssForm = {
+        error: 'feedbacks.exist',
+        isValid: false,
+      };
+      return;
+    } 
   
     validateForm(url, watchedState, schema);
+    console.log(watchedState.rssForm);
     if (!watchedState.rssForm.isValid) {
       return;
     }
 
+    loadRSS(watchedState, url);
   });
 }
 
@@ -158,7 +190,7 @@ export default () => {
       error: '',
       isValid: null,
     },
-    UrlSubmissionProcess: {
+    loadingProcces: {
       error: '',
       status: STATUS.FILLING,
     },
@@ -174,8 +206,25 @@ export default () => {
 
   // Controller
   handleRSSForm(elements, watchedState, schema);
+};
 
-  // const handleError = (name, key) => {
+// --------- URL-адреса для тестирования различных вариантов: (ошибки и тд)
+
+// NetworkError:
+// http://www.mk.ru/rss/politics/index.xml
+
+// UnknownError:
+// http://itunes.apple.com/us/rss/toptvseasons/limit=100/genre=4000/xml?at=1001l5Uo
+
+// invalidRSS:
+// https://myfin.by/rss
+
+// Updates:
+// https://lorem-rss.hexlet.app/feed?unit=second&interval=10
+
+
+
+ // const handleError = (name, key) => {
   //   watchedState.status = 'invalid';
   //   watchedState.error = { [name]: key };
   // };
@@ -242,21 +291,7 @@ export default () => {
   // watchPosts();
 
 
-};
 
-// --------- URL-адреса для тестирования различных вариантов: (ошибки и тд)
-
-// NetworkError:
-// http://www.mk.ru/rss/politics/index.xml
-
-// UnknownError:
-// http://itunes.apple.com/us/rss/toptvseasons/limit=100/genre=4000/xml?at=1001l5Uo
-
-// invalidRSS:
-// https://myfin.by/rss
-
-// Updates:
-// https://lorem-rss.hexlet.app/feed?unit=second&interval=10
 
 
 
