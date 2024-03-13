@@ -107,13 +107,14 @@ const isUrlExist = (watchedState, url) => {
   return false;
 };
 
-const validateForm = (url, watchedState, schema) => {
-  schema.validate({ url }, { abortEarly: false })
+const validateForm = (url, watchedState, schema, cb) => {
+  return schema.validate({ url }, { abortEarly: false })
     .then(() => {
       watchedState.rssForm = {
         error: '',
         isValid: true,
       };
+      return;
     })
     .catch((err) => {
       // const name = err.inner[0].path;
@@ -122,10 +123,18 @@ const validateForm = (url, watchedState, schema) => {
         error: key,
         isValid: false,
       };
+      throw new Error(err);
     });
-  
-  
 };
+
+const getFeedId = (feedsState) => {
+  if (feedsState.length === 0) {
+    return 0;
+  }
+  const lastFeed = feedsState[feedsState.length - 1];
+  const id = lastFeed.id + 1;
+  return id;
+}
 
 const loadRSS = (watchedState, url) => {
   axios.get(
@@ -133,11 +142,28 @@ const loadRSS = (watchedState, url) => {
     { timeout: TIMEOUT },
   )
   .then((res) => {
-    console.log(res);
-    console.log('Норм, можно парсить!');
+    const rss = parse(res.data.contents);
+    
+    const feed = { 
+      ...rss.feed, 
+      url,
+      id: getFeedId(watchedState.feeds), 
+    };
+    watchedState.feeds.push(feed);
+    
+    const posts = { ...rss.posts };
+
+    if (watchedState.posts.length === 0) {
+      posts.forEach((post, i) => {
+        post.id = i;
+        post.feedId = feed.id;
+      });
+    }
+
+    
   })
   .catch((err) => console.log(err));
-}; 
+};
 
 const handleRSSForm = (elements, watchedState, schema) => {
   const { form } = elements.init.rssForm;
@@ -152,17 +178,14 @@ const handleRSSForm = (elements, watchedState, schema) => {
         isValid: false,
       };
       return;
-    } 
-  
-    validateForm(url, watchedState, schema);
-    console.log(watchedState.rssForm);
-    if (!watchedState.rssForm.isValid) {
-      return;
     }
 
-    loadRSS(watchedState, url);
+    const promise = validateForm(url, watchedState, schema);
+    promise
+      .then(() => loadRSS(watchedState, url))
+      .catch(() => {});
   });
-}
+};
 
 export default () => {
   const elements = getElements();
