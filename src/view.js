@@ -1,5 +1,6 @@
 import onChange from 'on-change';
 import { isEmpty } from 'lodash';
+import STATUS from './utils/status.js';
 
 const renderInitText = (elements, t) => {
   elements.title.textContent = t('title');
@@ -25,71 +26,71 @@ const renderInitText = (elements, t) => {
 //   feedback.textContent = t(pathToFeedbackText);
 // };
 
-// const renderFeed = (elements, t, watchedState) => {
-//   const { feeds } = elements;
-//   const feedsListElement = feeds.list;
-//   const firstFeed = watchedState.lists.feeds[0];
-//   const { title, description } = firstFeed;
-//   const feedElement = document.createElement('li');
-//   const titleElement = document.createElement('h3');
-//   const descriptionElement = document.createElement('p');
+const renderFeed = (elements, t, watchedState) => {
+  const { feeds } = elements;
+  const feedsListElement = feeds.list;
+  const firstFeed = watchedState.lists.feeds[0];
+  const { title, description } = firstFeed;
+  const feedElement = document.createElement('li');
+  const titleElement = document.createElement('h3');
+  const descriptionElement = document.createElement('p');
 
-//   feeds.title.textContent = t('feeds');
-//   feedElement.classList.add('list-group-item', 'border-0', 'border-end-0');
-//   titleElement.classList.add('h6', 'm-0');
-//   descriptionElement.classList.add('m-0', 'small', 'text-black-50');
-//   titleElement.textContent = title;
-//   descriptionElement.textContent = description;
-//   feedElement.append(titleElement);
-//   feedElement.append(descriptionElement);
-//   feedsListElement.prepend(feedElement);
-// };
+  feeds.title.textContent = t('feeds');
+  feedElement.classList.add('list-group-item', 'border-0', 'border-end-0');
+  titleElement.classList.add('h6', 'm-0');
+  descriptionElement.classList.add('m-0', 'small', 'text-black-50');
+  titleElement.textContent = title;
+  descriptionElement.textContent = description;
+  feedElement.append(titleElement);
+  feedElement.append(descriptionElement);
+  feedsListElement.prepend(feedElement);
+};
 
-// const renderPosts = (args) => {
-//   const {
-//     elements, t, postsState, readPostsState,
-//   } = args;
-//   const { posts } = elements;
-//   posts.title.textContent = t('posts');
-//   const postsListElement = posts.list;
+const renderPosts = (args) => {
+  const {
+    elements, t, postsState, readPostsState,
+  } = args;
+  const { posts } = elements;
+  posts.title.textContent = t('posts');
+  const postsListElement = posts.list;
 
-//   postsListElement.innerHTML = '';
-//   postsState.forEach((post) => {
-//     const { id, title, link } = post;
-//     const postElement = document.createElement('li');
-//     const titleElement = document.createElement('a');
-//     const button = document.createElement('button');
-//     const currentReadPost = readPostsState.find((readPost) => readPost.id === id);
+  postsListElement.innerHTML = '';
+  postsState.forEach((post) => {
+    const { id, title, link } = post;
+    const postElement = document.createElement('li');
+    const titleElement = document.createElement('a');
+    const button = document.createElement('button');
+    // const currentReadPost = readPostsState.find((readPost) => readPost.id === id);
 
-//     postElement.classList.add(
-//       'list-group-item',
-//       'd-flex',
-//       'justify-content-between',
-//       'align-items-start',
-//       'border-0',
-//       'border-end-0',
-//     );
+    postElement.classList.add(
+      'list-group-item',
+      'd-flex',
+      'justify-content-between',
+      'align-items-start',
+      'border-0',
+      'border-end-0',
+    );
 
-//     if (currentReadPost) {
-//       titleElement.classList.add('fw-normal', 'link-secondary');
-//     } else {
-//       titleElement.classList.add('fw-bold');
-//     }
-//     button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
-//     titleElement.setAttribute('href', link);
-//     titleElement.setAttribute('data-id', id);
-//     titleElement.setAttribute('target', '_blank');
-//     titleElement.setAttribute('rel', 'noopener noreferrer');
-//     button.setAttribute('data-id', id);
-//     button.setAttribute('data-bs-target', '#modal');
-//     button.setAttribute('data-bs-toggle', 'modal');
-//     titleElement.textContent = title;
-//     button.textContent = 'Просмотр';
-//     postElement.append(titleElement);
-//     postElement.append(button);
-//     postsListElement.append(postElement);
-//   });
-// };
+    // if (currentReadPost) {
+    //   titleElement.classList.add('fw-normal', 'link-secondary');
+    // } else {
+    //   titleElement.classList.add('fw-bold');
+    // }
+    button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
+    titleElement.setAttribute('href', link);
+    titleElement.setAttribute('data-id', id);
+    titleElement.setAttribute('target', '_blank');
+    titleElement.setAttribute('rel', 'noopener noreferrer');
+    button.setAttribute('data-id', id);
+    button.setAttribute('data-bs-target', '#modal');
+    button.setAttribute('data-bs-toggle', 'modal');
+    titleElement.textContent = title;
+    button.textContent = 'Просмотр';
+    postElement.append(titleElement);
+    postElement.append(button);
+    postsListElement.append(postElement);
+  });
+};
 
 // const handleReadPosts = (elements, watchedState) => {
 //   const {
@@ -126,24 +127,31 @@ const renderInitText = (elements, t) => {
 //   feedback.textContent = '';
 // };
 
-// const handleFinishedStatus = (feedback, field, button, t) => {
-//   feedback.textContent = t('feedbacks.success');
-//   feedback.classList.add('text-success');
-//   field.removeAttribute('readonly');
-//   button.removeAttribute('disabled');
-//   field.classList.remove('is-invalid');
-//   field.focus();
-//   field.value = '';
-// };
-
 // const handleInvalidStatus = (field, button) => {
 //   field.removeAttribute('readonly');
 //   button.removeAttribute('disabled');
 // };
 
+const lockTheForm = (form, feedback) => {
+  const { field, button } = form;
+  field.classList.remove('is-invalid');
+  // feedback.classList.remove('text-danger');
+  button.setAttribute('disabled', '');
+  field.setAttribute('readonly', '');
+  feedback.textContent = '';
+}
+
+const unlockTheForm = (field, button) => {
+  field.removeAttribute('readonly');
+  button.removeAttribute('disabled');
+  // feedback.classList.remove('text-danger');
+}
+
 const renderError = (elements, t, error) => {
   const { feedback } = elements;
-  const { field } = elements.init.rssForm;
+  const { field, button } = elements.init.rssForm;
+
+  unlockTheForm(field, button);
 
   if (feedback.classList.contains('text-success')) {
     feedback.classList.remove('text-success');
@@ -165,6 +173,15 @@ const renderValid = (elements) => {
   feedback.textContent = ''; 
 }
 
+const handleSucessStatus = (form, feedback, t) => {
+  const { field, button } = form;
+  feedback.textContent = t('feedbacks.success');
+  feedback.classList.add('text-success');
+  unlockTheForm(field, button)
+  field.focus();
+  field.value = '';
+};
+
 export default (elements, i18n, initialState) => {
   const { t } = i18n;
   renderInitText(elements.init, t);
@@ -180,6 +197,28 @@ export default (elements, i18n, initialState) => {
       }
     }
 
+    if (path === 'loadingProcess') {
+      const { rssForm } = elements.init;
+      const { feedback } = elements;
+      const { status } = value;
+      
+      if (status === STATUS.FAIL) {
+        console.log('ТУТ');
+        renderError(elements, t, watchedState.loadingProcess.error);
+      }
+
+      if (status === STATUS.SENDING) {
+        lockTheForm(rssForm, feedback);
+      }
+      
+      if (status === STATUS.SUCCESS) {
+        handleSucessStatus(rssForm, feedback, t);
+        const args = { elements, t, posts: watchedState.posts };
+        renderFeed(elements, t, watchedState);
+        renderPosts(args);
+        render;
+      }
+    }
     
   });
   return watchedState;

@@ -1,24 +1,14 @@
 import axios from 'axios';
 import i18next from 'i18next';
 import * as yup from 'yup';
-import { isEmpty } from 'lodash';
+// import { isEmpty } from 'lodash';
 import resources from './locales/index.js';
 import watch from './view.js';
 import parse from './utils/parse.js';
+import STATUS from './utils/status.js';
 
 const UPDATE_INTERVAL = 5000;
 const TIMEOUT = 10000;
-const STATUS = {
-  FILLING: 'filling',
-  SENDING: 'sending',
-  SUCCESS: 'success',
-  FAIL: 'fail',
-};
-
-// const makeRequest = (url) => axios.get(
-//   `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`,
-//   { timeout: TIMEOUT },
-// );
 
 // const setIdOfTheUpdatedData = (data, state, feedId) => {
 //   const { post } = { ...data };
@@ -107,8 +97,8 @@ const isUrlExist = (watchedState, url) => {
   return false;
 };
 
-const validateForm = (url, watchedState, schema, cb) => {
-  return schema.validate({ url }, { abortEarly: false })
+const validateForm = (url, watchedState, schema, cb) => schema
+  .validate({ url }, { abortEarly: false })
     .then(() => {
       watchedState.rssForm = {
         error: '',
@@ -125,7 +115,6 @@ const validateForm = (url, watchedState, schema, cb) => {
       };
       throw new Error(err);
     });
-};
 
 const getFeedId = (feedsState) => {
   if (feedsState.length === 0) {
@@ -136,33 +125,51 @@ const getFeedId = (feedsState) => {
   return id;
 }
 
+const handleResponse = (watchedState, url, res) => {
+  const rss = parse(res.data.contents);
+  const feed = { 
+    ...rss.feed, 
+    url,
+    id: getFeedId(watchedState.feeds), 
+  };
+  watchedState.feeds.push(feed);
+
+  const posts = rss.posts.map((post) => ({ ...post, feedId: feed.id }));
+  const lastPost = watchedState.posts[watchedState.posts.length - 1];
+  const postsWithId = watchedState.posts.length === 0
+    ? posts.map((post, i) => ({ ...post, id: i }))
+    : posts.map((post, i) => ({ ...post, id: lastPost.id + (i + 1) }))
+  watchedState.posts.push(...postsWithId);
+};
+
 const loadRSS = (watchedState, url) => {
-  axios.get(
+  watchedState.loadingProcess = { error: '', status: STATUS.SENDING };
+
+  return axios.get(
     `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`,
     { timeout: TIMEOUT },
   )
   .then((res) => {
-    const rss = parse(res.data.contents);
-    
-    const feed = { 
-      ...rss.feed, 
-      url,
-      id: getFeedId(watchedState.feeds), 
-    };
-    watchedState.feeds.push(feed);
-    
-    const posts = { ...rss.posts };
-
-    if (watchedState.posts.length === 0) {
-      posts.forEach((post, i) => {
-        post.id = i;
-        post.feedId = feed.id;
-      });
-    }
-
-    
+    handleResponse(watchedState, url, res);
+    watchedState.loadingProcess = { error: '', status: STATUS.SUCCESS };
+    console.log(watchedState.posts);
   })
-  .catch((err) => console.log(err));
+  .catch((err) => {
+    console.log(err);
+    if (err.name && err.name === 'AxiosError') {
+      console.log('Работает');
+      watchedState.loadingProcess = {
+        error: 'feedbacks.networkError',
+        status: STATUS.FAIL,
+      };
+      return;
+    }
+    const [key] = err.errors;
+    watchedState.loadingProcess = {
+      error: key,
+      status: STATUS.FAIL,
+    };
+  });
 };
 
 const handleRSSForm = (elements, watchedState, schema) => {
@@ -213,7 +220,7 @@ export default () => {
       error: '',
       isValid: null,
     },
-    loadingProcces: {
+    loadingProcess: {
       error: '',
       status: STATUS.FILLING,
     },
