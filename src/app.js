@@ -132,6 +132,7 @@ const handleResponse = (watchedState, url, res) => {
     url,
     id: getFeedId(watchedState.feeds), 
   };
+
   watchedState.feeds.push(feed);
 
   const posts = rss.posts.map((post) => ({ ...post, feedId: feed.id }));
@@ -152,12 +153,9 @@ const loadRSS = (watchedState, url) => {
   .then((res) => {
     handleResponse(watchedState, url, res);
     watchedState.loadingProcess = { error: '', status: STATUS.SUCCESS };
-    console.log(watchedState.posts);
   })
   .catch((err) => {
-    console.log(err);
     if (err.name && err.name === 'AxiosError') {
-      console.log('Работает');
       watchedState.loadingProcess = {
         error: 'feedbacks.networkError',
         status: STATUS.FAIL,

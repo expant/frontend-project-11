@@ -29,8 +29,8 @@ const renderInitText = (elements, t) => {
 const renderFeed = (elements, t, watchedState) => {
   const { feeds } = elements;
   const feedsListElement = feeds.list;
-  const firstFeed = watchedState.lists.feeds[0];
-  const { title, description } = firstFeed;
+  const lastFeed = watchedState.feeds[watchedState.feeds.length - 1];
+  const { title, description } = lastFeed;
   const feedElement = document.createElement('li');
   const titleElement = document.createElement('h3');
   const descriptionElement = document.createElement('p');
@@ -55,7 +55,7 @@ const renderPosts = (args) => {
   const postsListElement = posts.list;
 
   postsListElement.innerHTML = '';
-  postsState.forEach((post) => {
+  postsState.reverse().forEach((post) => {
     const { id, title, link } = post;
     const postElement = document.createElement('li');
     const titleElement = document.createElement('a');
@@ -71,7 +71,7 @@ const renderPosts = (args) => {
       'border-end-0',
     );
 
-    // if (currentReadPost) {
+    // if (currentReadPost) { 
     //   titleElement.classList.add('fw-normal', 'link-secondary');
     // } else {
     //   titleElement.classList.add('fw-bold');
@@ -187,6 +187,8 @@ export default (elements, i18n, initialState) => {
   renderInitText(elements.init, t);
 
   const watchedState = onChange(initialState, (path, value) => {
+    console.log(path);
+
     if (path === 'rssForm') {
       if (value.isValid) {
         renderValid(elements);
@@ -213,10 +215,9 @@ export default (elements, i18n, initialState) => {
       
       if (status === STATUS.SUCCESS) {
         handleSucessStatus(rssForm, feedback, t);
-        const args = { elements, t, posts: watchedState.posts };
+        const args = { elements, t, postsState: watchedState.posts };
         renderFeed(elements, t, watchedState);
         renderPosts(args);
-        render;
       }
     }
     
