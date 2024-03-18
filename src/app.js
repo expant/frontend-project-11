@@ -22,38 +22,6 @@ const TIMEOUT = 10000;
 //   };
 // };
 
-// const setId = (data, state) => {
-//   const { feed, posts } = { ...data };
-//   if (isEmpty(state.lists.feeds) && isEmpty(state.lists.posts)) {
-//     const feedWithId = { ...feed, id: 0 };
-//     const postsWithId = posts.map((post, i) => ({
-//       ...post,
-//       id: i,
-//       feedId: feedWithId.id,
-//     }));
-//     return { feed: feedWithId, posts: postsWithId };
-//   }
-
-//   const {
-//     feeds: feedsFromState,
-//     posts: postsFromState,
-//   } = { ...state.lists };
-
-//   const lastFeed = feedsFromState[feedsFromState.length - 1];
-//   // const lastPost = postsFromState[postsFromState.length - 1];
-//   const lastPost = postsFromState[0];
-//   const feedWithId = { ...feed, id: lastFeed.id + 1 };
-//   const postsWithId = posts.map((post, i) => ({
-//     ...post,
-//     id: lastPost.id + (i + 1),
-//     feedId: feedWithId.id,
-//   }));
-//   return { feed: feedWithId, posts: postsWithId };
-// };
-
-// const validateRSSForm = () => {
-
-// };
 
 const getElements = () => ({
   init: {
@@ -97,7 +65,7 @@ const isUrlExist = (watchedState, url) => {
   return false;
 };
 
-const validateForm = (url, watchedState, schema, cb) => schema
+const validateForm = (url, watchedState, schema) => schema
   .validate({ url }, { abortEarly: false })
     .then(() => {
       watchedState.rssForm = {
@@ -107,7 +75,6 @@ const validateForm = (url, watchedState, schema, cb) => schema
       return;
     })
     .catch((err) => {
-      // const name = err.inner[0].path;
       const [key] = err.errors;
       watchedState.rssForm = {
         error: key,
@@ -125,6 +92,19 @@ const getFeedId = (feedsState) => {
   return id;
 }
 
+const getErrorKey = (err) => {
+  const networkError = err.name === 'AxiosError' ? 'networkError' : false;
+  const invalidRSS = err.message === 'invalidRSS' ? err.message : false;
+  const name = invalidRSS || networkError || 'unknownError';
+
+  switch (name) {
+    case 'networkError': return 'feedbacks.networkError';
+    case 'invalidRSS': return 'feedbacks.invalidRSS';
+    case 'unknownError': return 'feedbacks.unknownError';
+    default: throw new Error(`Unknown error name: '${name}'!`);
+  }
+};
+
 const handleResponse = (watchedState, url, res) => {
   const rss = parse(res.data.contents);
   const feed = { 
@@ -132,9 +112,11 @@ const handleResponse = (watchedState, url, res) => {
     url,
     id: getFeedId(watchedState.feeds), 
   };
-
   watchedState.feeds.push(feed);
 
+  if (!rss.posts) {
+    throw new Error('invalidRSS');
+  }
   const posts = rss.posts.map((post) => ({ ...post, feedId: feed.id }));
   const lastPost = watchedState.posts[watchedState.posts.length - 1];
   const postsWithId = watchedState.posts.length === 0
@@ -145,7 +127,6 @@ const handleResponse = (watchedState, url, res) => {
 
 const loadRSS = (watchedState, url) => {
   watchedState.loadingProcess = { error: '', status: STATUS.SENDING };
-
   return axios.get(
     `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`,
     { timeout: TIMEOUT },
@@ -155,18 +136,8 @@ const loadRSS = (watchedState, url) => {
     watchedState.loadingProcess = { error: '', status: STATUS.SUCCESS };
   })
   .catch((err) => {
-    if (err.name && err.name === 'AxiosError') {
-      watchedState.loadingProcess = {
-        error: 'feedbacks.networkError',
-        status: STATUS.FAIL,
-      };
-      return;
-    }
-    const [key] = err.errors;
-    watchedState.loadingProcess = {
-      error: key,
-      status: STATUS.FAIL,
-    };
+    const key = getErrorKey(err);
+    watchedState.loadingProcess = { error: key, status: STATUS.FAIL };
   });
 };
 
@@ -250,40 +221,6 @@ export default () => {
 // Updates:
 // https://lorem-rss.hexlet.app/feed?unit=second&interval=10
 
-
-
- // const handleError = (name, key) => {
-  //   watchedState.status = 'invalid';
-  //   watchedState.error = { [name]: key };
-  // };
-
-  // const handleResponse = (res, urlObj) => {
-  //   const { url, contentLength, feedId } = urlObj;
-  //   const { content_length: newContentLength } = res.data.status;
-  //   if (contentLength === newContentLength) {
-  //     return;
-  //   }
-
-  //   const parsedData = parse(res.data.contents);
-  //   const newPost = parsedData.posts.find((post) => {
-  //     const currentPost = watchedState.lists.posts.find(
-  //       (postFromState) => postFromState.title === post.title,
-  //     );
-
-  //     return !currentPost;
-  //   });
-
-  //   const data = { feed: parsedData.feed, post: newPost };
-
-  //   const post = setIdOfTheUpdatedData(data, watchedState, feedId);
-  //   const otherUrls = watchedState.urls.filter((urlItem) => urlItem.feedId !== feedId);
-  //   const newUrl = { url, contentLength: newContentLength, feedId };
-
-  //   watchedState.urls = [...otherUrls, newUrl];
-  //   watchedState.lists.posts = [post, ...watchedState.lists.posts];
-  //   watchedState.status = 'updated';
-  // };
-
   // const handleModal = () => {
   //   const { list } = elements.posts;
   //   const readPostsElements = list.querySelectorAll('li');
@@ -317,61 +254,3 @@ export default () => {
   //   return setTimeout(watchPosts, UPDATE_INTERVAL);
   // };
   // watchPosts();
-
-
-
-
-
-
-
-
-// watchedState.status = 'sending';
-    // schema.validate({ url }, { abortEarly: false })
-    //   // sending a request
-    //   .then(() => {
-    //     const existingUrl = watchedState.urls.find((currentUrl) => currentUrl.url === url);
-    //     if (existingUrl) {
-    //       watchedState.error = { exist: 'feedbacks.exist' };
-    //       watchedState.status = 'invalid';
-    //       return;
-    //     }
-
-    //     watchedState.error = {};
-    //     watchedState.status = 'valid';
-    //     return makeRequest(url);
-    //   })
-    //   .catch((err) => {
-    //     if (err.name && err.name === 'AxiosError') {
-    //       handleError('networkError', 'feedbacks.networkError');
-    //       return;
-    //     }
-    //     if (!err.inner) return;
-    //     const name = err.inner[0].path;
-    //     const [key] = err.errors;
-    //     handleError(name, key);
-    //   })
-    //   // Parsing
-    //   .then((res) => {
-    //     if (!res) return;
-    //     const parsedData = parse(res.data.contents);
-    //     if (isEmpty(parsedData)) {
-    //       watchedState.status = 'invalid';
-    //       watchedState.error = { invalidRSS: 'feedbacks.invalidRSS' };
-    //       return;
-    //     }
-
-    //     const { feed, posts } = setId(parsedData, watchedState);
-    //     const { content_length: contentLength } = res.data.status;
-    //     watchedState.urls.push({ url, contentLength, feedId: feed.id });
-    //     watchedState.lists.feeds = [feed, ...watchedState.lists.feeds];
-    //     watchedState.lists.posts = [...posts.reverse(), ...watchedState.lists.posts];
-    //     watchedState.status = 'finished';
-    //   })
-    //   .catch(() => handleError('unknownError', 'feedbacks.unknownError'))
-    //   .then(() => {
-    //     const { list } = elements.posts;
-    //     if (list.childNodes.length === 0) {
-    //       return;
-    //     }
-    //     handleModal();
-    //   });

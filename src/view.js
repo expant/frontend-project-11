@@ -187,8 +187,6 @@ export default (elements, i18n, initialState) => {
   renderInitText(elements.init, t);
 
   const watchedState = onChange(initialState, (path, value) => {
-    console.log(path);
-
     if (path === 'rssForm') {
       if (value.isValid) {
         renderValid(elements);
@@ -205,7 +203,6 @@ export default (elements, i18n, initialState) => {
       const { status } = value;
       
       if (status === STATUS.FAIL) {
-        console.log('ТУТ');
         renderError(elements, t, watchedState.loadingProcess.error);
       }
 
