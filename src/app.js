@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { Axios } from 'axios';
 import i18next from 'i18next';
 import * as yup from 'yup';
 // import { isEmpty } from 'lodash';
@@ -107,17 +107,30 @@ const getErrorKey = (err) => {
 
 const handleResponse = (watchedState, url, res) => {
   const rss = parse(res.data.contents);
-  const feed = { 
-    ...rss.feed, 
-    url,
-    id: getFeedId(watchedState.feeds), 
-  };
-  watchedState.feeds.push(feed);
+
+  if (!isUrlExist(watchedState, url)) {
+    const feed = { 
+      ...rss.feed, 
+      url,
+      id: getFeedId(watchedState.feeds), 
+    };
+    watchedState.feeds.push(feed);
+  }
 
   if (!rss.posts) {
     throw new Error('invalidRSS');
   }
-  const posts = rss.posts.map((post) => ({ ...post, feedId: feed.id }));
+
+  watchedState.posts
+  // TODO: Обновление старых и новых постов 
+
+  const feedId = watchedState.feeds.find((feed) => feed.url === url);
+  const posts = rss.posts.map((post) => {
+    return { ...post, feedId: feedId ?  feedId : feed.id }
+  });
+
+  console.log(rss)
+
   const lastPost = watchedState.posts[watchedState.posts.length - 1];
   const postsWithId = watchedState.posts.length === 0
     ? posts.map((post, i) => ({ ...post, id: i }))
@@ -138,6 +151,29 @@ const loadRSS = (watchedState, url) => {
   .catch((err) => {
     const key = getErrorKey(err);
     watchedState.loadingProcess = { error: key, status: STATUS.FAIL };
+  });
+};
+
+const watchPosts = (watchedState) => {
+  if (watchedState.feeds.length === 0) {
+    return setTimeout(() => watchPosts(watchedState), UPDATE_INTERVAL);
+  }
+  
+  const promises = watchedState.feeds.map(({ url }) => {
+    watchedState.updatingProcess = { status: STATUS.SENDING };
+    return axios.get(
+      `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`,
+      { timeout: TIMEOUT },
+    )
+    .then((res) => {
+      handleResponse(watchedState, url, res);
+    })
+    .catch(() => {});
+  });
+
+  return Promise.all(promises).then(() => {
+    watchedState.updatingProcess = { status: STATUS.SUCCESS };
+    return setTimeout(() => watchPosts(watchedState), UPDATE_INTERVAL);
   });
 };
 
@@ -193,6 +229,9 @@ export default () => {
       error: '',
       status: STATUS.FILLING,
     },
+    updatingProcess: {
+      status: STATUS.FILLING,
+    },
     feeds: [],
     posts: [],
     ui: {
@@ -204,6 +243,7 @@ export default () => {
   const watchedState = watch(elements, i18n, initialState);
 
   // Controller
+  watchPosts(watchedState);
   handleRSSForm(elements, watchedState, schema);
 };
 
@@ -246,11 +286,3 @@ export default () => {
   //     .catch(() => handleError('networkError', 'feedbacks.networkError'));
   // });
 
-  // const watchPosts = () => {
-  //   if (watchedState.urls.length === 0) {
-  //     return setTimeout(watchPosts, UPDATE_INTERVAL);
-  //   }
-  //   updatePosts();
-  //   return setTimeout(watchPosts, UPDATE_INTERVAL);
-  // };
-  // watchPosts();

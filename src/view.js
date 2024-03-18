@@ -76,6 +76,9 @@ const renderPosts = (args) => {
     // } else {
     //   titleElement.classList.add('fw-bold');
     // }
+
+      console.log('rendering...');
+
     button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
     titleElement.setAttribute('href', link);
     titleElement.setAttribute('data-id', id);
@@ -214,6 +217,15 @@ export default (elements, i18n, initialState) => {
         handleSucessStatus(rssForm, feedback, t);
         const args = { elements, t, postsState: watchedState.posts };
         renderFeed(elements, t, watchedState);
+        renderPosts(args);
+      }
+    }
+
+    if (path === 'updatingProcess') {
+      const { status } = value;
+
+      if (status === STATUS.SUCCESS) {
+        const args = { elements, t, postsState: watchedState.posts };
         renderPosts(args);
       }
     }
