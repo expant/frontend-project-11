@@ -2,6 +2,7 @@ import axios, { Axios } from 'axios';
 import i18next from 'i18next';
 import * as yup from 'yup';
 // import { isEmpty } from 'lodash';
+import { isEqual } from 'lodash';
 import resources from './locales/index.js';
 import watch from './view.js';
 import parse from './utils/parse.js';
@@ -105,32 +106,46 @@ const getErrorKey = (err) => {
   }
 };
 
-const handleResponse = (watchedState, url, res) => {
+const updatePosts = (watchedState, url, res) => {
   const rss = parse(res.data.contents);
 
-  if (!isUrlExist(watchedState, url)) {
-    const feed = { 
-      ...rss.feed, 
-      url,
-      id: getFeedId(watchedState.feeds), 
-    };
-    watchedState.feeds.push(feed);
+  console.log(rss);
+  
+  const feed = watchedState.feeds.find((feed) => feed.url === url);
+  const existingPosts = watchedState.posts.filter((post) => post.feedId === feed.id);
+
+
+  console.log(newPost);
+
+  if (!newPost) {
+    return;
   }
+
+  const id = watchedState.posts[watchedState.posts.length - 1].id + 1;
+  const newPostWithId = { ...newPost, feedId: feed.id, id };
+  // const otherPosts = watchedState.posts.filter((post) => post.feedId !== feed.id);
+
+  watchedState.posts = [...watchedState.posts, newPostWithId];
+
+  // const posts = rss.posts.map((post) => {
+  //   return { ...post, feedId: feedId ?  feedId : feed.id }
+  // });
+};
+
+const handleResponse = (watchedState, url, res) => {
+  const rss = parse(res.data.contents);
+  const feed = { 
+    ...rss.feed, 
+    url,
+    id: getFeedId(watchedState.feeds), 
+  };
+  watchedState.feeds.push(feed);
 
   if (!rss.posts) {
     throw new Error('invalidRSS');
   }
 
-  watchedState.posts
-  // TODO: Обновление старых и новых постов 
-
-  const feedId = watchedState.feeds.find((feed) => feed.url === url);
-  const posts = rss.posts.map((post) => {
-    return { ...post, feedId: feedId ?  feedId : feed.id }
-  });
-
-  console.log(rss)
-
+  const posts = rss.posts.map((post) => ({ ...post, feedId: feed.id }));
   const lastPost = watchedState.posts[watchedState.posts.length - 1];
   const postsWithId = watchedState.posts.length === 0
     ? posts.map((post, i) => ({ ...post, id: i }))
@@ -166,7 +181,7 @@ const watchPosts = (watchedState) => {
       { timeout: TIMEOUT },
     )
     .then((res) => {
-      handleResponse(watchedState, url, res);
+      updatePosts(watchedState, url, res);
     })
     .catch(() => {});
   });
