@@ -55,7 +55,7 @@ const renderPosts = (args) => {
   const postsListElement = posts.list;
 
   postsListElement.innerHTML = '';
-  postsState.reverse().forEach((post) => {
+  postsState.toReversed().forEach((post) => {
     const { id, title, link } = post;
     const postElement = document.createElement('li');
     const titleElement = document.createElement('a');

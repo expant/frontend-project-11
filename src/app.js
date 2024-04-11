@@ -2,13 +2,14 @@ import axios, { Axios } from 'axios';
 import i18next from 'i18next';
 import * as yup from 'yup';
 // import { isEmpty } from 'lodash';
-import { isEqual } from 'lodash';
+// import { isEqual } from 'lodash';
 import resources from './locales/index.js';
 import watch from './view.js';
 import parse from './utils/parse.js';
 import STATUS from './utils/status.js';
 
-const UPDATE_INTERVAL = 5000;
+import watchPosts from './utils/watchPosts.js';
+
 const TIMEOUT = 10000;
 
 // const setIdOfTheUpdatedData = (data, state, feedId) => {
@@ -22,7 +23,6 @@ const TIMEOUT = 10000;
 //     feedId,
 //   };
 // };
-
 
 const getElements = () => ({
   init: {
@@ -106,32 +106,6 @@ const getErrorKey = (err) => {
   }
 };
 
-const updatePosts = (watchedState, url, res) => {
-  const rss = parse(res.data.contents);
-
-  console.log(rss);
-  
-  const feed = watchedState.feeds.find((feed) => feed.url === url);
-  const existingPosts = watchedState.posts.filter((post) => post.feedId === feed.id);
-
-
-  console.log(newPost);
-
-  if (!newPost) {
-    return;
-  }
-
-  const id = watchedState.posts[watchedState.posts.length - 1].id + 1;
-  const newPostWithId = { ...newPost, feedId: feed.id, id };
-  // const otherPosts = watchedState.posts.filter((post) => post.feedId !== feed.id);
-
-  watchedState.posts = [...watchedState.posts, newPostWithId];
-
-  // const posts = rss.posts.map((post) => {
-  //   return { ...post, feedId: feedId ?  feedId : feed.id }
-  // });
-};
-
 const handleResponse = (watchedState, url, res) => {
   const rss = parse(res.data.contents);
   const feed = { 
@@ -150,7 +124,8 @@ const handleResponse = (watchedState, url, res) => {
   const postsWithId = watchedState.posts.length === 0
     ? posts.map((post, i) => ({ ...post, id: i }))
     : posts.map((post, i) => ({ ...post, id: lastPost.id + (i + 1) }))
-  watchedState.posts.push(...postsWithId);
+  watchedState.posts.push(...postsWithId.toReversed());
+  console.log(watchedState.posts);
 };
 
 const loadRSS = (watchedState, url) => {
@@ -166,29 +141,6 @@ const loadRSS = (watchedState, url) => {
   .catch((err) => {
     const key = getErrorKey(err);
     watchedState.loadingProcess = { error: key, status: STATUS.FAIL };
-  });
-};
-
-const watchPosts = (watchedState) => {
-  if (watchedState.feeds.length === 0) {
-    return setTimeout(() => watchPosts(watchedState), UPDATE_INTERVAL);
-  }
-  
-  const promises = watchedState.feeds.map(({ url }) => {
-    watchedState.updatingProcess = { status: STATUS.SENDING };
-    return axios.get(
-      `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`,
-      { timeout: TIMEOUT },
-    )
-    .then((res) => {
-      updatePosts(watchedState, url, res);
-    })
-    .catch(() => {});
-  });
-
-  return Promise.all(promises).then(() => {
-    watchedState.updatingProcess = { status: STATUS.SUCCESS };
-    return setTimeout(() => watchPosts(watchedState), UPDATE_INTERVAL);
   });
 };
 
@@ -255,6 +207,7 @@ export default () => {
   };
 
   // View
+
   const watchedState = watch(elements, i18n, initialState);
 
   // Controller
