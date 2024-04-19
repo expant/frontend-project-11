@@ -1,6 +1,7 @@
 import axios from 'axios';
 import parse from './parse.js'
 import STATUS from './status.js';
+import handleModal from './handleModal.js';
 
 const TIMEOUT = 10000;
 const UPDATE_INTERVAL = 5000;
@@ -17,18 +18,18 @@ const updatePosts = (watchedState, url, res) => {
     return;
   }
   
-  const lastPost = watchedState.posts[watchedState.posts.length - 1];
+  const lastPost = watchedState.posts[0];
   const newPostsWithId = newPosts.map((post, i) => ({ 
     ...post, 
     feedId: feed.id,
     id: lastPost.id + (i + 1),
   }));
-  watchedState.posts.push(...newPostsWithId);
+  watchedState.posts = [...newPostsWithId.reverse(), ...watchedState.posts];
 };
 
-const watchPosts = (watchedState) => {
+const watchPosts = (elements, watchedState) => {
   if (watchedState.feeds.length === 0) {
-    return setTimeout(() => watchPosts(watchedState), UPDATE_INTERVAL);
+    return setTimeout(() => watchPosts(elements, watchedState), UPDATE_INTERVAL);
   }
   
   const promises = watchedState.feeds.map(({ url }) => {
@@ -43,7 +44,8 @@ const watchPosts = (watchedState) => {
 
   return Promise.all(promises).then(() => {
     watchedState.updatingProcess = { status: STATUS.SUCCESS };
-    return setTimeout(() => watchPosts(watchedState), UPDATE_INTERVAL);
+    handleModal(elements, watchedState);
+    return setTimeout(() => watchPosts(elements, watchedState), UPDATE_INTERVAL);
   });
 };
 

@@ -1,5 +1,4 @@
 import onChange from 'on-change';
-import { isEmpty } from 'lodash';
 import STATUS from './utils/status.js';
 
 const renderInitText = (elements, t) => {
@@ -47,20 +46,17 @@ const renderFeed = (elements, t, watchedState) => {
 };
 
 const renderPosts = (args) => {
-  const {
-    elements, t, postsState, readPostsState,
-  } = args;
+  const { elements, t, postsState, seenPosts } = args;
   const { posts } = elements;
   posts.title.textContent = t('posts');
   const postsListElement = posts.list;
 
   postsListElement.innerHTML = '';
-  postsState.toReversed().forEach((post) => {
+  postsState.forEach((post) => {
     const { id, title, link } = post;
     const postElement = document.createElement('li');
     const titleElement = document.createElement('a');
     const button = document.createElement('button');
-    // const currentReadPost = readPostsState.find((readPost) => readPost.id === id);
 
     postElement.classList.add(
       'list-group-item',
@@ -71,14 +67,9 @@ const renderPosts = (args) => {
       'border-end-0',
     );
 
-    // if (currentReadPost) { 
-    //   titleElement.classList.add('fw-normal', 'link-secondary');
-    // } else {
-    //   titleElement.classList.add('fw-bold');
-    // }
-
-      console.log('rendering...');
-
+    const titleElementClasses = seenPosts.includes(id)
+      ? ['fw-normal', 'link-secondary'] : ['fw-bold'];
+    titleElement.classList.add(...titleElementClasses);
     button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
     titleElement.setAttribute('href', link);
     titleElement.setAttribute('data-id', id);
@@ -95,32 +86,47 @@ const renderPosts = (args) => {
   });
 };
 
-// const handleReadPosts = (elements, watchedState) => {
-//   const {
-//     title: modalElTitle,
-//     description: modalElDesc,
-//     readCompletely,
-//   } = elements.modal;
-//   const { list } = elements.posts;
-//   const postElements = Array.from(list.querySelectorAll('li'));
-//   const post = watchedState.uiState.readPosts[
-//     watchedState.uiState.readPosts.length - 1
-//   ];
-//   const {
-//     title, description, link, id,
-//   } = post;
-//   const readPostElement = postElements.find((postEl) => {
-//     const btnEl = postEl.querySelector('button');
-//     return parseInt(btnEl.dataset.id, 10) === id;
-//   });
-//   const linkEl = readPostElement.querySelector('a');
+const renderSeenPost = (elements, watchedState, value) => {
+  console.log('render seen posts');
+  // if (typeof value !== 'Number') {
+  //   return;
+  // }
+  // const { list } = elements.posts;
+  // const linkElements = Array.from(list.querySelectorAll('li > a'));
+  // console.log(linkElements);
+  console.log(value);
+  // const link = linkElements.find((link) => link.dataset.id === value);
+  // link.classList.remove('fw-bold');
+  // link.classList.add('fw-normal', 'link-secondary');
+}
 
-//   linkEl.classList.remove('fw-bold');
-//   linkEl.classList.add('fw-normal', 'link-secondary');
-//   modalElTitle.textContent = title;
-//   modalElDesc.textContent = description;
-//   readCompletely.setAttribute('href', link);
-// };
+const renderModal = (elements, watchedState) => {
+  console.log('render seen posts');
+  // const {
+  //   title: modalElTitle,
+  //   description: modalElDesc,
+  //   readCompletely,
+  // } = elements.modal;
+  // const { list } = elements.posts;
+  // const postElements = Array.from(list.querySelectorAll('li'));
+  // const post = watchedState.uiState.readPosts[
+  //   watchedState.uiState.readPosts.length - 1
+  // ];
+  // const {
+  //   title, description, link, id,
+  // } = post;
+  // const readPostElement = postElements.find((postEl) => {
+  //   const btnEl = postEl.querySelector('button');
+  //   return parseInt(btnEl.dataset.id, 10) === id;
+  // });
+  // const linkEl = readPostElement.querySelector('a');
+
+  // linkEl.classList.remove('fw-bold');
+  // linkEl.classList.add('fw-normal', 'link-secondary');
+  // modalElTitle.textContent = title;
+  // modalElDesc.textContent = description;
+  // readCompletely.setAttribute('href', link);
+};
 
 // const handleSendingStatus = (feedback, field, button) => {
 //   field.classList.remove('is-invalid');
@@ -200,6 +206,11 @@ export default (elements, i18n, initialState) => {
       }
     }
 
+    if (path === 'ui.seenPosts') {
+      renderSeenPost(elements, watchedState, value);
+      renderModal(elements, watchedState);
+    }
+
     if (path === 'loadingProcess') {
       const { rssForm } = elements.init;
       const { feedback } = elements;
@@ -215,7 +226,12 @@ export default (elements, i18n, initialState) => {
       
       if (status === STATUS.SUCCESS) {
         handleSucessStatus(rssForm, feedback, t);
-        const args = { elements, t, postsState: watchedState.posts };
+        const args = { 
+          elements, 
+          t, 
+          postsState: watchedState.posts,
+          seenPosts: watchedState.ui.seenPosts,
+        };
         renderFeed(elements, t, watchedState);
         renderPosts(args);
       }
@@ -225,7 +241,12 @@ export default (elements, i18n, initialState) => {
       const { status } = value;
 
       if (status === STATUS.SUCCESS) {
-        const args = { elements, t, postsState: watchedState.posts };
+        const args = { 
+          elements,
+          t, 
+          postsState: watchedState.posts,
+          seenPosts: watchedState.ui.seenPosts,
+        };
         renderPosts(args);
       }
     }

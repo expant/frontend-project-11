@@ -1,28 +1,15 @@
 import axios, { Axios } from 'axios';
 import i18next from 'i18next';
 import * as yup from 'yup';
-// import { isEmpty } from 'lodash';
-// import { isEqual } from 'lodash';
 import resources from './locales/index.js';
 import watch from './view.js';
 import parse from './utils/parse.js';
 import STATUS from './utils/status.js';
 
 import watchPosts from './utils/watchPosts.js';
+import handleModal from './utils/handleModal.js';
 
 const TIMEOUT = 10000;
-
-// const setIdOfTheUpdatedData = (data, state, feedId) => {
-//   const { post } = { ...data };
-//   const { posts: postsFromState } = { ...state.lists };
-//   const lastPost = postsFromState[0];
-//   // console.log(post);
-//   return {
-//     ...post,
-//     id: lastPost.id + 1,
-//     feedId,
-//   };
-// };
 
 const getElements = () => ({
   init: {
@@ -120,12 +107,11 @@ const handleResponse = (watchedState, url, res) => {
   }
 
   const posts = rss.posts.map((post) => ({ ...post, feedId: feed.id }));
-  const lastPost = watchedState.posts[watchedState.posts.length - 1];
+  const lastPost = watchedState.posts[0];
   const postsWithId = watchedState.posts.length === 0
     ? posts.map((post, i) => ({ ...post, id: i }))
-    : posts.map((post, i) => ({ ...post, id: lastPost.id + (i + 1) }))
-  watchedState.posts.push(...postsWithId.toReversed());
-  console.log(watchedState.posts);
+    : posts.map((post, i) => ({ ...post, id: lastPost.id + (i + 1) }));
+  watchedState.posts = [...postsWithId.reverse(), ...watchedState.posts];
 };
 
 const loadRSS = (watchedState, url) => {
@@ -162,6 +148,7 @@ const handleRSSForm = (elements, watchedState, schema) => {
     const promise = validateForm(url, watchedState, schema);
     promise
       .then(() => loadRSS(watchedState, url))
+      .then(() => handleModal(elements, watchedState))
       .catch(() => {});
   });
 };
@@ -207,13 +194,12 @@ export default () => {
   };
 
   // View
-
   const watchedState = watch(elements, i18n, initialState);
 
   // Controller
-  watchPosts(watchedState);
+  watchPosts(elements, watchedState);
   handleRSSForm(elements, watchedState, schema);
-};
+}; 
 
 // --------- URL-адреса для тестирования различных вариантов: (ошибки и тд)
 
@@ -228,29 +214,3 @@ export default () => {
 
 // Updates:
 // https://lorem-rss.hexlet.app/feed?unit=second&interval=10
-
-  // const handleModal = () => {
-  //   const { list } = elements.posts;
-  //   const readPostsElements = list.querySelectorAll('li');
-  //   const updateStateOfReadPosts = (event) => {
-  //     if (!event.target.dataset.id) {
-  //       return;
-  //     }
-  //     const postId = parseInt(event.target.dataset.id, 10);
-  //     const currentPost = watchedState.lists.posts.find((post) => post.id === postId);
-  //     const otherPosts = watchedState.uiState.readPosts.filter((post) => post.id !== postId);
-  //     watchedState.uiState.readPosts = [...otherPosts, currentPost];
-  //   };
-
-  //   readPostsElements.forEach((readPostEl) => {
-  //     readPostEl.addEventListener('click', (e) => updateStateOfReadPosts(e));
-  //   });
-  // };
-
-  // const updatePosts = () => watchedState.urls.forEach((urlObj) => {
-  //   makeRequest(urlObj.url)
-  //     .then((res) => handleResponse(res, urlObj))
-  //     .then(() => handleModal())
-  //     .catch(() => handleError('networkError', 'feedbacks.networkError'));
-  // });
-
