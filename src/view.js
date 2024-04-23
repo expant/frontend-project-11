@@ -11,20 +11,6 @@ const renderInitText = (elements, t) => {
   elements.modal.close.textContent = t('modal.close');
 };
 
-// const renderError = (elements, t, error) => {
-//   if (isEmpty(error)) {
-//     return;
-//   }
-//   const { feedback } = elements;
-//   const { field } = elements.init.rssForm;
-//   const [, pathToFeedbackText] = Object.entries(error).flatMap((err) => err);
-
-//   field.classList.add('is-invalid');
-//   feedback.classList.remove('text-success');
-//   feedback.classList.add('text-danger');
-//   feedback.textContent = t(pathToFeedbackText);
-// };
-
 const renderFeed = (elements, t, watchedState) => {
   const { feeds } = elements;
   const feedsListElement = feeds.list;
@@ -67,7 +53,7 @@ const renderPosts = (args) => {
       'border-end-0',
     );
 
-    const titleElementClasses = seenPosts.includes(id)
+    const titleElementClasses = seenPosts.all.includes(id)
       ? ['fw-normal', 'link-secondary'] : ['fw-bold'];
     titleElement.classList.add(...titleElementClasses);
     button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
@@ -86,60 +72,25 @@ const renderPosts = (args) => {
   });
 };
 
-const renderSeenPost = (elements, watchedState, value) => {
-  console.log('render seen posts');
-  // if (typeof value !== 'Number') {
-  //   return;
-  // }
-  // const { list } = elements.posts;
-  // const linkElements = Array.from(list.querySelectorAll('li > a'));
-  // console.log(linkElements);
-  console.log(value);
-  // const link = linkElements.find((link) => link.dataset.id === value);
-  // link.classList.remove('fw-bold');
-  // link.classList.add('fw-normal', 'link-secondary');
+const changeClassOfSeenPost = (elements, id) => {
+  const { list } = elements.posts;
+  const element = list.querySelector(`li > a[data-id="${id}"]`);
+  element.classList.remove('fw-bold');
+  element.classList.add('fw-normal', 'link-secondary');
 }
 
-const renderModal = (elements, watchedState) => {
-  console.log('render seen posts');
-  // const {
-  //   title: modalElTitle,
-  //   description: modalElDesc,
-  //   readCompletely,
-  // } = elements.modal;
-  // const { list } = elements.posts;
-  // const postElements = Array.from(list.querySelectorAll('li'));
-  // const post = watchedState.uiState.readPosts[
-  //   watchedState.uiState.readPosts.length - 1
-  // ];
-  // const {
-  //   title, description, link, id,
-  // } = post;
-  // const readPostElement = postElements.find((postEl) => {
-  //   const btnEl = postEl.querySelector('button');
-  //   return parseInt(btnEl.dataset.id, 10) === id;
-  // });
-  // const linkEl = readPostElement.querySelector('a');
-
-  // linkEl.classList.remove('fw-bold');
-  // linkEl.classList.add('fw-normal', 'link-secondary');
-  // modalElTitle.textContent = title;
-  // modalElDesc.textContent = description;
-  // readCompletely.setAttribute('href', link);
+const renderModal = (elements, watchedState, id) => {
+  const {
+    title: modalElTitle,
+    description: modalElDesc,
+    readCompletely,
+  } = elements.modal;
+  const post = watchedState.posts.find((post) => post.id === id);
+  const { title, description, link } = post;
+  modalElTitle.textContent = title;
+  modalElDesc.textContent = description;
+  readCompletely.setAttribute('href', link);
 };
-
-// const handleSendingStatus = (feedback, field, button) => {
-//   field.classList.remove('is-invalid');
-//   feedback.classList.remove('text-danger');
-//   button.setAttribute('disabled', '');
-//   field.setAttribute('readonly', '');
-//   feedback.textContent = '';
-// };
-
-// const handleInvalidStatus = (field, button) => {
-//   field.removeAttribute('readonly');
-//   button.removeAttribute('disabled');
-// };
 
 const lockTheForm = (form, feedback) => {
   const { field, button } = form;
@@ -191,111 +142,100 @@ const handleSucessStatus = (form, feedback, t) => {
   field.value = '';
 };
 
+const handleLoadingProcess = (elements, watchedState, value) => {
+  const { rssForm } = elements.init;
+  const { feedback } = elements;
+  const { status } = value;
+
+  if (status === STATUS.FAIL) {
+    renderError(elements, t, watchedState.loadingProcess.error);
+  }
+
+  if (status === STATUS.SENDING) {
+    lockTheForm(rssForm, feedback);
+  }
+
+  if (status === STATUS.SUCCESS) {
+    console.log('ВСЁ ОК №3');
+    handleSucessStatus(rssForm, feedback, t);
+    const args = { 
+      elements, 
+      t, 
+      postsState: watchedState.posts,
+      seenPosts: watchedState.ui.seenPosts,
+    };
+    renderFeed(elements, t, watchedState);
+    renderPosts(args);
+  }
+
+  // switch (status) {
+  //   case STATUS.FAIL: {}
+  //     renderError(elements, t, watchedState.loadingProcess.error);
+  //     break;
+  //   case STATUS.SENDING:
+  //     lockTheForm(rssForm, feedback);
+  //     break;
+  //   case STATUS.SUCCESS: {
+  //     handleSucessStatus(rssForm, feedback, t);
+  //     const args = { 
+  //       elements, 
+  //       t, 
+  //       postsState: watchedState.posts,
+  //       seenPosts: watchedState.ui.seenPosts,
+  //     };
+  //     renderFeed(elements, t, watchedState);
+  //     renderPosts(args);
+  //     break;
+  //   }
+  //   default:
+  //     throw new Error(`Unknown status: '${status}'!`);
+  // }
+}
+
 export default (elements, i18n, initialState) => {
   const { t } = i18n;
   renderInitText(elements.init, t);
 
   const watchedState = onChange(initialState, (path, value) => {
-    if (path === 'rssForm') {
-      if (value.isValid) {
+    switch (path) {
+      case 'rssForm': {
+        if (!value.isValid) {
+          renderError(elements, t, value.error);
+          return;
+        } 
         renderValid(elements);
-      } 
-
-      if (!value.isValid) {
-        renderError(elements, t, value.error);
+        break;
+        // if (!value.isValid) {
+          
+        // }
       }
-    }
-
-    if (path === 'ui.seenPosts') {
-      renderSeenPost(elements, watchedState, value);
-      renderModal(elements, watchedState);
-    }
-
-    if (path === 'loadingProcess') {
-      const { rssForm } = elements.init;
-      const { feedback } = elements;
-      const { status } = value;
-      
-      if (status === STATUS.FAIL) {
-        renderError(elements, t, watchedState.loadingProcess.error);
+      case 'ui.seenPosts': {
+        const id = watchedState.ui.seenPosts.last;
+        changeClassOfSeenPost(elements, id);
+        renderModal(elements, watchedState, id);
+        break;
       }
+      case 'loadingProcess':
+        console.log('Всё ок');
+        handleLoadingProcess(elements, watchedState, value);
+        break;
+      case 'updatingProcess': {
+        const { status } = value;
 
-      if (status === STATUS.SENDING) {
-        lockTheForm(rssForm, feedback);
+        if (status === STATUS.SUCCESS) {
+          const args = { 
+            elements,
+            t, 
+            postsState: watchedState.posts,
+            seenPosts: watchedState.ui.seenPosts,
+          };
+          renderPosts(args);
+        }
+        break;
       }
-      
-      if (status === STATUS.SUCCESS) {
-        handleSucessStatus(rssForm, feedback, t);
-        const args = { 
-          elements, 
-          t, 
-          postsState: watchedState.posts,
-          seenPosts: watchedState.ui.seenPosts,
-        };
-        renderFeed(elements, t, watchedState);
-        renderPosts(args);
-      }
-    }
-
-    if (path === 'updatingProcess') {
-      const { status } = value;
-
-      if (status === STATUS.SUCCESS) {
-        const args = { 
-          elements,
-          t, 
-          postsState: watchedState.posts,
-          seenPosts: watchedState.ui.seenPosts,
-        };
-        renderPosts(args);
-      }
-    }
-    
+      default:
+        throw new Error(`Unknown path: '${path}'!`);
+    }    
   });
   return watchedState;
 };
-
-
-// switch (path) {
-//   case 'error': {
-//     renderError(elements, t, value);
-//     return;
-//   }
-//   case 'lists.posts': {
-//     renderPosts({
-//       elements,
-//       t,
-//       postsState: watchedState.lists.posts,
-//       readPostsState: watchedState.uiState.readPosts,
-//     });
-//     return;
-//   }
-//   case 'lists.feeds': {
-//     renderFeed(elements, t, watchedState);
-//     return;
-//   }
-//   case 'uiState.readPosts': {
-//     handleReadPosts(elements, watchedState);
-//     return;
-//   }
-//   // default: console.log(`Unknown path ${path}: ${value}`);
-//   default: console.log('');
-// }
-
-
-// switch (watchedState.status) {
-//   case 'sending': {
-//     handleSendingStatus(feedback, field, button);
-//     break;
-//   }
-//   case 'finished': {
-//     handleFinishedStatus(feedback, field, button, t);
-//     break;
-//   }
-//   case 'invalid': {
-//     handleInvalidStatus(field, button);
-//     return;
-//   }
-//   // default: console.log(`Unknown status ${watchedState.status}`);
-//   default: console.log('');
-// }

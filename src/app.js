@@ -5,9 +5,8 @@ import resources from './locales/index.js';
 import watch from './view.js';
 import parse from './utils/parse.js';
 import STATUS from './utils/status.js';
-
 import watchPosts from './utils/watchPosts.js';
-import handleModal from './utils/handleModal.js';
+import { default as handleModal} from './utils/handleModal.js';
 
 const TIMEOUT = 10000;
 
@@ -189,7 +188,10 @@ export default () => {
     feeds: [],
     posts: [],
     ui: {
-      seenPosts: [],
+      seenPosts: {
+        last: null,
+        all: [],
+      },
     },
   };
 

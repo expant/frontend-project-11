@@ -1,18 +1,23 @@
 const handleSeenPost = (event, watchedState) => {
-  const id = event.target.dataset.id;
-  if (!id ) {
+  if (!event.target.dataset.id ) {
     return;
   }
-
-  const seenPosts = [...watchedState.ui.seenPosts];
+  const id = parseInt(event.target.dataset.id);
+  const seenPosts = [...watchedState.ui.seenPosts.all];
   if (seenPosts.includes(id)) {
-    watchedState.ui.seenPosts = seenPosts;
+    watchedState.ui.seenPosts = {
+      last: id,
+      all: seenPosts,
+    };
     return;
   }
-  watchedState.ui.seenPosts.push(id);
+  watchedState.ui.seenPosts = {
+    last: id,
+    all: [...seenPosts, id],
+  };
 }; 
 
-const handleModal = (elements, watchedState) => {
+export default (elements, watchedState) => {
   const { list } = elements.posts;
   const postElements = list.querySelectorAll('li');
   postElements.forEach((el) => {
@@ -20,4 +25,4 @@ const handleModal = (elements, watchedState) => {
   });
 };
 
-export default handleModal;
+// export default handleModal;
