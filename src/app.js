@@ -1,33 +1,32 @@
-import axios, { Axios } from 'axios';
+import axios from 'axios';
 import i18next from 'i18next';
 import * as yup from 'yup';
 import resources from './locales/index.js';
 import watch from './view.js';
 import parse from './utils/parse.js';
 import STATUS from './utils/status.js';
-import { default as getRequestArgs } from './utils/getRequestArgs.js';
-import { default as getElements } from './utils/getElements.js';
-import { default as getErrorKey } from './utils/getErrorKey.js';
-import { default as handleModal} from './utils/handleModal.js';
+import getRequestArgs from './utils/getRequestArgs.js';
+import getElements from './utils/getElements.js';
+import getErrorKey from './utils/getErrorKey.js';
+import handleModal from './utils/handleModal.js';
 import watchPosts from './utils/watchPosts.js';
 
 const validateForm = (url, watchedState, schema) => schema
   .validate({ url }, { abortEarly: false })
-    .then(() => {
-      watchedState.rssForm = {
-        error: '',
-        isValid: true,
-      };
-      return;
-    })
-    .catch((err) => {
-      const [key] = err.errors;
-      watchedState.rssForm = {
-        error: key,
-        isValid: false,
-      };
-      throw new Error(err);
-    });
+  .then(() => {
+    watchedState.rssForm = {
+      error: '',
+      isValid: true,
+    };
+  })
+  .catch((err) => {
+    const [key] = err.errors;
+    watchedState.rssForm = {
+      error: key,
+      isValid: false,
+    };
+    throw new Error(err);
+  });
 
 const handleResponse = (watchedState, url, res) => {
   const rss = parse(res.data.contents);
@@ -89,7 +88,7 @@ export default () => {
       url: 'feedbacks.invalid',
     },
   });
-  
+
   const schema = yup.object({
     url: yup.string().required().url(),
   });
@@ -101,8 +100,8 @@ export default () => {
     resources,
   });
 
-   // Model
-   const initialState = {
+  // Model
+  const initialState = {
     rssForm: {
       error: '',
       isValid: null,
@@ -130,4 +129,4 @@ export default () => {
   // Controller
   watchPosts(getElements(), watchedState);
   handleRSSForm(getElements(), watchedState, schema);
-}; 
+};

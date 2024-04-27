@@ -1,6 +1,6 @@
 import onChange from 'on-change';
 import STATUS from './utils/status.js';
-import { default as getElements } from './utils/getElements.js';
+import getElements from './utils/getElements.js';
 
 const renderInitText = (elements, t) => {
   elements.title.textContent = t('title');
@@ -33,7 +33,9 @@ const renderFeed = (elements, t, state) => {
 };
 
 const renderPosts = (args) => {
-  const { elements, t, postsState, seenPosts } = args;
+  const {
+    elements, t, postsState, seenPosts,
+  } = args;
   const { posts } = elements;
   posts.title.textContent = t('posts');
   const postsListElement = posts.list;
@@ -78,7 +80,7 @@ const changeClassOfSeenPost = (elements, id) => {
   const element = list.querySelector(`li > a[data-id="${id}"]`);
   element.classList.remove('fw-bold');
   element.classList.add('fw-normal', 'link-secondary');
-}
+};
 
 const renderModal = (elements, state, id) => {
   const {
@@ -86,7 +88,7 @@ const renderModal = (elements, state, id) => {
     description: modalElDesc,
     readCompletely,
   } = elements.modal;
-  const post = state.posts.find((post) => post.id === id);
+  const post = state.posts.find((item) => item.id === id);
   const { title, description, link } = post;
   modalElTitle.textContent = title;
   modalElDesc.textContent = description;
@@ -100,13 +102,13 @@ const lockTheForm = (form, feedback) => {
   button.setAttribute('disabled', '');
   field.setAttribute('readonly', '');
   feedback.textContent = '';
-}
+};
 
 const unlockTheForm = (field, button) => {
   field.removeAttribute('readonly');
   button.removeAttribute('disabled');
   // feedback.classList.remove('text-danger');
-}
+};
 
 const renderError = (elements, t, error) => {
   const { feedback } = elements;
@@ -117,7 +119,7 @@ const renderError = (elements, t, error) => {
   if (feedback.classList.contains('text-success')) {
     feedback.classList.remove('text-success');
   }
-  field.classList.add('is-invalid');      
+  field.classList.add('is-invalid');
   feedback.classList.add('text-danger');
   feedback.textContent = t(error);
 };
@@ -129,16 +131,16 @@ const renderValid = (elements) => {
   if (feedback.classList.contains('text-danger')) {
     feedback.classList.remove('text-danger');
   }
-  field.classList.remove('is-invalid');    
+  field.classList.remove('is-invalid');
   feedback.classList.add('text-success');
-  feedback.textContent = ''; 
-}
+  feedback.textContent = '';
+};
 
 const handleSucessStatus = (form, feedback, t) => {
   const { field, button } = form;
   feedback.textContent = t('feedbacks.success');
   feedback.classList.add('text-success');
-  unlockTheForm(field, button)
+  unlockTheForm(field, button);
   field.focus();
   field.value = '';
 };
@@ -158,9 +160,9 @@ const handleLoadingProcess = (elements, state, value, t) => {
       break;
     case STATUS.SUCCESS: {
       handleSucessStatus(rssForm, feedback, t);
-      const args = { 
-        elements, 
-        t, 
+      const args = {
+        elements,
+        t,
         postsState: state.posts,
         seenPosts: state.ui.seenPosts,
       };
@@ -171,17 +173,19 @@ const handleLoadingProcess = (elements, state, value, t) => {
     default:
       throw new Error(`Unknown status: '${status}'!`);
   }
-}
+};
 
 const handleStateByPath = (args) => {
-  const { path, value, t, state, elements } = args;
+  const {
+    path, value, t, state, elements,
+  } = args;
 
   switch (path) {
     case 'rssForm': {
       if (!value.isValid) {
         renderError(elements, t, value.error);
         return;
-      } 
+      }
       renderValid(elements);
       break;
     }
@@ -198,13 +202,13 @@ const handleStateByPath = (args) => {
       const { status } = value;
 
       if (status === STATUS.SUCCESS) {
-        const args = { 
+        const postsArgs = {
           elements,
-          t, 
+          t,
           postsState: state.posts,
           seenPosts: state.ui.seenPosts,
         };
-        renderPosts(args);
+        renderPosts(postsArgs);
       }
       break;
     }
@@ -212,7 +216,7 @@ const handleStateByPath = (args) => {
     case 'posts': break;
     default:
       throw new Error(`Unknown path: '${path}'!`);
-  }    
+  }
 };
 
 export default (i18n, initialState) => {
@@ -225,11 +229,10 @@ export default (i18n, initialState) => {
       path,
       value,
       t,
-      state: state,
+      state,
       elements,
-    }
+    };
     handleStateByPath(args);
-   
   });
   return state;
 };

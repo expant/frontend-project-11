@@ -1,8 +1,8 @@
 const handleSeenPost = (event, watchedState) => {
-  if (!event.target.dataset.id ) {
+  if (!event.target.dataset.id) {
     return;
   }
-  const id = parseInt(event.target.dataset.id);
+  const id = parseInt(event.target.dataset.id, 10);
   const seenPosts = [...watchedState.ui.seenPosts.all];
   if (seenPosts.includes(id)) {
     watchedState.ui.seenPosts = {
@@ -15,7 +15,7 @@ const handleSeenPost = (event, watchedState) => {
     last: id,
     all: [...seenPosts, id],
   };
-}; 
+};
 
 export default (elements, watchedState) => {
   const { list } = elements.posts;
