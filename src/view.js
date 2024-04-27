@@ -1,5 +1,6 @@
 import onChange from 'on-change';
 import STATUS from './utils/status.js';
+import { default as getElements } from './utils/getElements.js';
 
 const renderInitText = (elements, t) => {
   elements.title.textContent = t('title');
@@ -11,10 +12,10 @@ const renderInitText = (elements, t) => {
   elements.modal.close.textContent = t('modal.close');
 };
 
-const renderFeed = (elements, t, watchedState) => {
+const renderFeed = (elements, t, state) => {
   const { feeds } = elements;
   const feedsListElement = feeds.list;
-  const lastFeed = watchedState.feeds[watchedState.feeds.length - 1];
+  const lastFeed = state.feeds[state.feeds.length - 1];
   const { title, description } = lastFeed;
   const feedElement = document.createElement('li');
   const titleElement = document.createElement('h3');
@@ -79,13 +80,13 @@ const changeClassOfSeenPost = (elements, id) => {
   element.classList.add('fw-normal', 'link-secondary');
 }
 
-const renderModal = (elements, watchedState, id) => {
+const renderModal = (elements, state, id) => {
   const {
     title: modalElTitle,
     description: modalElDesc,
     readCompletely,
   } = elements.modal;
-  const post = watchedState.posts.find((post) => post.id === id);
+  const post = state.posts.find((post) => post.id === id);
   const { title, description, link } = post;
   modalElTitle.textContent = title;
   modalElDesc.textContent = description;
@@ -142,100 +143,93 @@ const handleSucessStatus = (form, feedback, t) => {
   field.value = '';
 };
 
-const handleLoadingProcess = (elements, watchedState, value) => {
+const handleLoadingProcess = (elements, state, value, t) => {
   const { rssForm } = elements.init;
   const { feedback } = elements;
   const { status } = value;
 
-  if (status === STATUS.FAIL) {
-    renderError(elements, t, watchedState.loadingProcess.error);
+  switch (status) {
+    case STATUS.FAIL:
+      console.log('status fail');
+      renderError(elements, t, state.loadingProcess.error);
+      break;
+    case STATUS.SENDING:
+      lockTheForm(rssForm, feedback);
+      break;
+    case STATUS.SUCCESS: {
+      handleSucessStatus(rssForm, feedback, t);
+      const args = { 
+        elements, 
+        t, 
+        postsState: state.posts,
+        seenPosts: state.ui.seenPosts,
+      };
+      renderFeed(elements, t, state);
+      renderPosts(args);
+      break;
+    }
+    default:
+      throw new Error(`Unknown status: '${status}'!`);
   }
-
-  if (status === STATUS.SENDING) {
-    lockTheForm(rssForm, feedback);
-  }
-
-  if (status === STATUS.SUCCESS) {
-    console.log('ВСЁ ОК №3');
-    handleSucessStatus(rssForm, feedback, t);
-    const args = { 
-      elements, 
-      t, 
-      postsState: watchedState.posts,
-      seenPosts: watchedState.ui.seenPosts,
-    };
-    renderFeed(elements, t, watchedState);
-    renderPosts(args);
-  }
-
-  // switch (status) {
-  //   case STATUS.FAIL: {}
-  //     renderError(elements, t, watchedState.loadingProcess.error);
-  //     break;
-  //   case STATUS.SENDING:
-  //     lockTheForm(rssForm, feedback);
-  //     break;
-  //   case STATUS.SUCCESS: {
-  //     handleSucessStatus(rssForm, feedback, t);
-  //     const args = { 
-  //       elements, 
-  //       t, 
-  //       postsState: watchedState.posts,
-  //       seenPosts: watchedState.ui.seenPosts,
-  //     };
-  //     renderFeed(elements, t, watchedState);
-  //     renderPosts(args);
-  //     break;
-  //   }
-  //   default:
-  //     throw new Error(`Unknown status: '${status}'!`);
-  // }
 }
 
-export default (elements, i18n, initialState) => {
+const handleStateByPath = (args) => {
+  const { path, value, t, state, elements } = args;
+
+  switch (path) {
+    case 'rssForm': {
+      if (!value.isValid) {
+        renderError(elements, t, value.error);
+        return;
+      } 
+      renderValid(elements);
+      break;
+    }
+    case 'ui.seenPosts': {
+      const id = state.ui.seenPosts.last;
+      changeClassOfSeenPost(elements, id);
+      renderModal(elements, state, id);
+      break;
+    }
+    case 'loadingProcess':
+      handleLoadingProcess(elements, state, value, t);
+      break;
+    case 'updatingProcess': {
+      const { status } = value;
+
+      if (status === STATUS.SUCCESS) {
+        const args = { 
+          elements,
+          t, 
+          postsState: state.posts,
+          seenPosts: state.ui.seenPosts,
+        };
+        renderPosts(args);
+      }
+      break;
+    }
+    case 'feeds': break;
+    case 'posts': break;
+    default:
+      throw new Error(`Unknown path: '${path}'!`);
+  }    
+};
+
+export default (i18n, initialState) => {
   const { t } = i18n;
+  const elements = getElements();
   renderInitText(elements.init, t);
 
-  const watchedState = onChange(initialState, (path, value) => {
-    switch (path) {
-      case 'rssForm': {
-        if (!value.isValid) {
-          renderError(elements, t, value.error);
-          return;
-        } 
-        renderValid(elements);
-        break;
-        // if (!value.isValid) {
-          
-        // }
-      }
-      case 'ui.seenPosts': {
-        const id = watchedState.ui.seenPosts.last;
-        changeClassOfSeenPost(elements, id);
-        renderModal(elements, watchedState, id);
-        break;
-      }
-      case 'loadingProcess':
-        console.log('Всё ок');
-        handleLoadingProcess(elements, watchedState, value);
-        break;
-      case 'updatingProcess': {
-        const { status } = value;
-
-        if (status === STATUS.SUCCESS) {
-          const args = { 
-            elements,
-            t, 
-            postsState: watchedState.posts,
-            seenPosts: watchedState.ui.seenPosts,
-          };
-          renderPosts(args);
-        }
-        break;
-      }
-      default:
-        throw new Error(`Unknown path: '${path}'!`);
-    }    
+  const state = onChange(initialState, (path, value) => {
+    const args = {
+      path,
+      value,
+      t,
+      state: state,
+      elements,
+    }
+    handleStateByPath(args);
+   
   });
-  return watchedState;
+  return state;
 };

@@ -2,8 +2,8 @@ import axios from 'axios';
 import parse from './parse.js'
 import STATUS from './status.js';
 import handleModal from './handleModal.js';
+import { default as getRequestArgs } from './getRequestArgs.js';
 
-const TIMEOUT = 10000;
 const UPDATE_INTERVAL = 5000;
 
 const updatePosts = (watchedState, url, res) => {
@@ -34,13 +34,10 @@ const watchPosts = (elements, watchedState) => {
   
   const promises = watchedState.feeds.map(({ url }) => {
     watchedState.updatingProcess = { status: STATUS.SENDING };
-    return axios.get(
-      `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`,
-      { timeout: TIMEOUT },
-    )
-    .then((res) => updatePosts(watchedState, url, res))
-    .catch(() => {});
-  });
+    return axios.get(...getRequestArgs(url))
+      .then((res) => updatePosts(watchedState, url, res))
+      .catch(() => {});
+    });
 
   return Promise.all(promises).then(() => {
     watchedState.updatingProcess = { status: STATUS.SUCCESS };
