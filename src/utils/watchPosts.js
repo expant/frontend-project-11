@@ -1,8 +1,8 @@
 import axios from 'axios';
-import parse from './parse.js';
-import STATUS from './status.js';
-import handleModal from './handleModal.js';
-import getRequestArgs from './getRequestArgs.js';
+import parse from './parse';
+import STATUS from './status';
+import handleModal from './handleModal';
+import getRequestArgs from './getRequestArgs';
 
 const UPDATE_INTERVAL = 5000;
 

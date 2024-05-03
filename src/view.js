@@ -1,6 +1,6 @@
 import onChange from 'on-change';
-import STATUS from './utils/status.js';
-import getElements from './utils/getElements.js';
+import STATUS from './utils/status';
+import getElements from './utils/getElements';
 
 const renderInitText = (elements, t) => {
   elements.title.textContent = t('title');
@@ -152,7 +152,6 @@ const handleLoadingProcess = (elements, state, value, t) => {
 
   switch (status) {
     case STATUS.FAIL:
-      console.log('status fail');
       renderError(elements, t, state.loadingProcess.error);
       break;
     case STATUS.SENDING:
