@@ -1,15 +1,15 @@
 import axios from 'axios';
 import i18next from 'i18next';
 import * as yup from 'yup';
-import resources from './locales/index';
-import watch from './view';
-import parse from './utils/parse';
-import STATUS from './utils/status';
-import getRequestArgs from './utils/getRequestArgs';
-import getElements from './utils/getElements';
-import getErrorKey from './utils/getErrorKey';
-import handleModal from './utils/handleModal';
-import watchPosts from './utils/watchPosts';
+import resources from './locales/index.js';
+import watch from './view.js';
+import parse from './utils/parse.js';
+import STATUS from './utils/status.js';
+import getRequestArgs from './utils/getRequestArgs.js';
+import getElements from './utils/getElements.js';
+import getErrorKey from './utils/getErrorKey.js';
+import handleModal from './utils/handleModal.js';
+import watchPosts from './utils/watchPosts.js';
 
 const validateForm = (url, watchedState, schema) => schema
   .validate({ url }, { abortEarly: false })

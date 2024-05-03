@@ -1,6 +1,6 @@
 import onChange from 'on-change';
-import STATUS from './utils/status';
-import getElements from './utils/getElements';
+import STATUS from './utils/status.js';
+import getElements from './utils/getElements.js';
 
 const renderInitText = (elements, t) => {
   elements.title.textContent = t('title');
