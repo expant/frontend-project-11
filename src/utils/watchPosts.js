@@ -6,15 +6,15 @@ import getRequestArgs from './getRequestArgs.js';
 
 const UPDATE_INTERVAL = 5000;
 
-const getUpdatedPosts = (state, url, contents) => {
-  const rss = parse(contents);
+const getUpdatedPosts = (state, url, resContents) => {
+  const rss = parse(resContents);
   const feed = state.feeds.find((item) => item.url === url);
   const existingTitles = state.posts
     .filter((post) => post.feedId === feed.id)
     .map((post) => post.title);
   const newPosts = rss.posts.filter(({ title }) => !existingTitles.includes(title));
   if (newPosts.length === 0) {
-    return;
+    return false;
   }
 
   const lastPost = state.posts[0];
@@ -31,14 +31,14 @@ const watchPosts = (elements, watchedState) => {
     return setTimeout(() => watchPosts(elements, watchedState), UPDATE_INTERVAL);
   }
 
-  const updatePosts = (contents, url) => {
+  const updatePosts = (resContents, url) => {
     const posts = getUpdatedPosts(
-      { 
+      {
         feeds: watchedState.feeds,
         posts: watchedState.posts,
-      }, 
-      url, 
-      contents,
+      },
+      url,
+      resContents,
     );
     if (!posts) return;
     watchedState.posts = posts;

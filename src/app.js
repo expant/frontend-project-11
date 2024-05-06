@@ -2,7 +2,7 @@ import axios from 'axios';
 import i18next from 'i18next';
 import * as yup from 'yup';
 import resources from './locales/index.js';
-import watch from './view.js';
+import watch from './view/index.js';
 import parse from './utils/parse.js';
 import STATUS from './utils/status.js';
 import getRequestArgs from './utils/getRequestArgs.js';
