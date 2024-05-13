@@ -30,14 +30,15 @@ const validateForm = (url, watchedState, schema) => schema
 
 const handleResponse = (watchedState, url, res) => {
   const rss = parse(res.data.contents);
+  if (!rss.posts) {
+    throw new Error('invalidRSS');
+  }
+  
   const feedsState = watchedState.feeds;
   const feedId = feedsState.length === 0 ? 0 : feedsState.at(-1).id + 1;
   const feed = { ...rss.feed, url, id: feedId };
   watchedState.feeds.push(feed);
 
-  if (!rss.posts) {
-    throw new Error('invalidRSS');
-  }
   const posts = rss.posts.map((post) => ({ ...post, feedId: feed.id }));
   const lastPost = watchedState.posts[0];
   const postsWithId = watchedState.posts.length === 0
