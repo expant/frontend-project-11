@@ -13,13 +13,6 @@
   "author": "Anton Elagin",
   "license": "ISC",
   "type": "module",
-  "jest": {
-    "verbose": true,
-    "testEnvironmentOptions": {
-      "url": "http://localhost/"
-    },
-    "testEnvironment": "jsdom"
-  },
   "devDependencies": {
     "@babel/core": "^7.23.3",
     "@babel/eslint-parser": "^7.23.10",
