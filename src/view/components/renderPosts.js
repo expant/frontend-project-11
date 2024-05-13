@@ -2,6 +2,11 @@ export default (args) => {
   const {
     elements, t, postsState, seenPosts,
   } = args;
+
+  if (postsState.length === 0) {
+    return;
+  }
+
   const { posts } = elements;
   posts.title.textContent = t('posts');
   const postsListElement = posts.list;
