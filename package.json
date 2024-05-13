@@ -1,7 +1,7 @@
 {
   "name": "@hexlet/code",
   "version": "1.0.0",
-  "description": "[![Actions Status](https://github.com/expant/frontend-project-11/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/expant/frontend-project-11/actions)",
+  "description": "RSS is a specialized format designed to describe news feeds, article announcements and other materials.",
   "main": "index.js",
   "scripts": {
     "start": "npx webpack serve"
