@@ -15,7 +15,6 @@ export default {
           },
         },
       },
-      // { test: /\.css$/, use: [MiniCssExtractPlugin.loader, 'style-loader', 'css-loader', 'postcss-loader'] },
       {
         test: /\.scss$/i,
         use: [MiniCssExtractPlugin.loader, 'css-loader', 'postcss-loader', 'sass-loader'],

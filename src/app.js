@@ -33,7 +33,7 @@ const handleResponse = (watchedState, url, res) => {
   if (!rss.posts) {
     throw new Error('invalidRSS');
   }
-  
+
   const feedsState = watchedState.feeds;
   const feedId = feedsState.length === 0 ? 0 : feedsState.at(-1).id + 1;
   const feed = { ...rss.feed, url, id: feedId };
