@@ -92,8 +92,7 @@ const handleStateByPath = (args) => {
   }
 };
 
-export default (i18n, initialState) => {
-  const { t } = i18n;
+export default (t, initialState) => {
   const elements = getElements();
   renderInitText(elements.init, t);
 

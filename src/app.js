@@ -94,13 +94,6 @@ export default () => {
     url: yup.string().required().url(),
   });
 
-  const i18n = i18next.createInstance();
-  i18n.init({
-    lng: 'ru',
-    debug: false,
-    resources,
-  });
-
   // Model
   const initialState = {
     rssForm: {
@@ -125,9 +118,18 @@ export default () => {
   };
 
   // View
-  const watchedState = watch(i18n, initialState);
-
+  const i18n = i18next.createInstance();
+  const promise = i18n.init({
+    lng: 'ru',
+    debug: false,
+    resources,
+  });
+  promise
+    .then((t) => watch(t, initialState))
   // Controller
-  watchPosts(getElements(), watchedState);
-  handleRSSForm(getElements(), watchedState, schema);
+    .then((watchedState) => {
+      watchPosts(getElements(), watchedState);
+      handleRSSForm(getElements(), watchedState, schema);
+    })
+    .catch((err) => console.error(err));
 };
