@@ -27,7 +27,7 @@ export default (args) => {
       'border-end-0',
     );
 
-    const titleElementClasses = seenPosts.all.includes(id)
+    const titleElementClasses = seenPosts.has(id)
       ? ['fw-normal', 'link-secondary'] : ['fw-bold'];
     titleElement.classList.add(...titleElementClasses);
     button.classList.add('btn', 'btn-outline-primary', 'btn-sm');

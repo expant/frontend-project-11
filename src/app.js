@@ -110,10 +110,7 @@ export default () => {
     feeds: [],
     posts: [],
     ui: {
-      seenPosts: {
-        last: null,
-        all: [],
-      },
+      seenPosts: new Set(),
     },
   };
 

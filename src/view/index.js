@@ -63,7 +63,8 @@ const handleStateByPath = (args) => {
       break;
     }
     case 'ui.seenPosts': {
-      const id = state.ui.seenPosts.last;
+      const id = [...state.ui.seenPosts].at(-1);
+      console.log(value);
       changeClassOfSeenPost(elements, id);
       renderModal(elements, state, id);
       break;
